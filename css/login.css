@@ -1,1 +1,718 @@
 
+/* ========================================
+   KEWADEV ADMIN LOGIN
+   LOGIN PAGE STYLESHEET
+======================================== */
+
+
+/* 1. ROOT VARIABLES */
+
+:root {
+    --bg-primary: #030817;
+    --bg-card: #07162b;
+
+    --border-color: #142d50;
+
+    --text-primary: #edf3ff;
+    --text-secondary: #9aaccb;
+    --text-muted: #647795;
+
+    --blue: #246bff;
+    --purple: #792cff;
+    --cyan: #13cfff;
+    --green: #19e6b3;
+    --red: #ff4d79;
+
+    --transition: 0.25s ease;
+}
+
+
+/* 2. RESET */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    min-height: 100%;
+}
+
+body {
+    min-height: 100vh;
+
+    font-family:
+        Inter,
+        "Segoe UI",
+        Arial,
+        sans-serif;
+
+    color: var(--text-primary);
+
+    background:
+        radial-gradient(
+            ellipse at 15% 10%,
+            rgba(36, 107, 255, 0.13),
+            transparent 40%
+        ),
+        radial-gradient(
+            ellipse at 90% 85%,
+            rgba(121, 44, 255, 0.13),
+            transparent 38%
+        ),
+        var(--bg-primary);
+
+    -webkit-font-smoothing: antialiased;
+}
+
+button,
+input {
+    font: inherit;
+}
+
+button,
+a {
+    -webkit-tap-highlight-color: transparent;
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+button {
+    cursor: pointer;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible {
+    outline: 2px solid var(--cyan);
+    outline-offset: 3px;
+}
+
+
+/* 3. PAGE CONTAINER */
+
+.login-container {
+    width: 100%;
+    min-height: 100vh;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    padding: 35px 20px;
+}
+
+
+/* 4. BRAND */
+
+.login-brand {
+    margin-bottom: 28px;
+    text-align: center;
+}
+
+.brand-logo {
+    display: inline-block;
+
+    font-size: 38px;
+    font-weight: 900;
+    letter-spacing: 3px;
+
+    background: linear-gradient(
+        110deg,
+        #24d7ff,
+        #5874ff,
+        #c05aff
+    );
+
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+
+    filter: drop-shadow(
+        0 0 15px rgba(76, 102, 255, 0.24)
+    );
+}
+
+.brand-logo span {
+    font-size: 15px;
+    letter-spacing: 2px;
+    margin-left: 5px;
+}
+
+.login-brand > p {
+    margin-top: 5px;
+
+    color: var(--text-muted);
+    font-size: 10px;
+    font-weight: 600;
+
+    letter-spacing: 3px;
+}
+
+
+/* 5. LOGIN CARD */
+
+.login-card {
+    width: 100%;
+    max-width: 420px;
+
+    padding: 34px;
+
+    background: linear-gradient(
+        145deg,
+        rgba(9, 25, 49, 0.97),
+        rgba(4, 13, 31, 0.98)
+    );
+
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+
+    box-shadow:
+        0 20px 70px rgba(0, 0, 0, 0.32),
+        0 0 35px rgba(36, 83, 255, 0.06);
+
+    position: relative;
+    overflow: hidden;
+}
+
+.login-card::before {
+    content: "";
+
+    position: absolute;
+    top: 0;
+    left: 15%;
+
+    width: 70%;
+    height: 1px;
+
+    background: linear-gradient(
+        90deg,
+        transparent,
+        var(--blue),
+        var(--purple),
+        transparent
+    );
+}
+
+
+/* 6. LOGIN ICON */
+
+.login-icon {
+    width: 62px;
+    height: 62px;
+
+    display: grid;
+    place-items: center;
+
+    margin: 0 auto 22px;
+
+    border: 1px solid rgba(93, 103, 255, 0.35);
+    border-radius: 17px;
+
+    background: linear-gradient(
+        135deg,
+        rgba(36, 107, 255, 0.18),
+        rgba(121, 44, 255, 0.18)
+    );
+
+    box-shadow:
+        0 0 25px rgba(73, 76, 255, 0.12);
+}
+
+.login-icon span {
+    font-size: 36px;
+    color: var(--cyan);
+}
+
+
+/* 7. LOGIN HEADING */
+
+.login-heading {
+    margin-bottom: 28px;
+    text-align: center;
+}
+
+.login-heading h1 {
+    font-size: 26px;
+    font-weight: 750;
+    letter-spacing: -0.5px;
+}
+
+.login-heading p {
+    margin-top: 8px;
+
+    color: var(--text-secondary);
+    font-size: 12px;
+    line-height: 1.7;
+}
+
+
+/* 8. FORM GROUPS */
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group > label {
+    display: block;
+
+    margin-bottom: 9px;
+
+    color: #dce6ff;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.form-group input {
+    width: 100%;
+    height: 47px;
+
+    padding: 0 14px;
+
+    color: var(--text-primary);
+    background: rgba(3, 12, 28, 0.85);
+
+    border: 1px solid #183253;
+    border-radius: 9px;
+
+    outline: none;
+
+    font-size: 12px;
+
+    transition:
+        border-color var(--transition),
+        box-shadow var(--transition),
+        background var(--transition);
+}
+
+.form-group input::placeholder {
+    color: #637795;
+    opacity: 1;
+}
+
+.form-group input:hover {
+    border-color: #294b77;
+}
+
+.form-group input:focus {
+    border-color: var(--blue);
+
+    background: rgba(5, 17, 39, 0.98);
+
+    box-shadow:
+        0 0 0 3px rgba(36, 107, 255, 0.12);
+}
+
+
+/* 9. PASSWORD INPUT */
+
+.password-wrapper {
+    position: relative;
+}
+
+.password-wrapper input {
+    padding-right: 70px;
+}
+
+.password-toggle {
+    position: absolute;
+
+    top: 50%;
+    right: 13px;
+
+    transform: translateY(-50%);
+
+    border: none;
+    background: transparent;
+
+    color: var(--cyan);
+    font-size: 11px;
+    font-weight: 600;
+
+    transition: color var(--transition);
+}
+
+.password-toggle:hover {
+    color: white;
+}
+
+
+/* 10. FORM OPTIONS */
+
+.form-options {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+
+    gap: 12px;
+
+    margin: 4px 0 24px;
+}
+
+.remember-option {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+
+    color: var(--text-secondary);
+    font-size: 11px;
+
+    cursor: pointer;
+}
+
+.remember-option input {
+    width: 14px;
+    height: 14px;
+
+    accent-color: var(--blue);
+    cursor: pointer;
+}
+
+.forgot-link {
+    color: #829cff;
+    font-size: 11px;
+
+    transition: color var(--transition);
+}
+
+.forgot-link:hover {
+    color: var(--cyan);
+}
+
+
+/* 11. LOGIN MESSAGE */
+
+.login-message {
+    margin: 0 0 16px;
+    padding: 11px 12px;
+
+    border: 1px solid rgba(255, 77, 121, 0.35);
+    border-radius: 8px;
+
+    background: rgba(255, 77, 121, 0.08);
+
+    color: #ff91ac;
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.login-message[hidden] {
+    display: none;
+}
+
+
+/* Optional success state for JavaScript */
+
+.login-message.success {
+    color: var(--green);
+
+    background: rgba(25, 230, 179, 0.08);
+    border-color: rgba(25, 230, 179, 0.3);
+}
+
+
+/* 12. SIGN IN BUTTON */
+
+.login-btn {
+    width: 100%;
+    min-height: 48px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+
+    padding: 12px 16px;
+
+    border: 1px solid rgba(130, 112, 255, 0.55);
+    border-radius: 9px;
+
+    background: linear-gradient(
+        110deg,
+        #2056f5,
+        #6231e7,
+        #792cff
+    );
+
+    color: white;
+
+    font-size: 13px;
+    font-weight: 700;
+
+    box-shadow:
+        0 7px 22px rgba(69, 54, 255, 0.2);
+
+    transition:
+        transform var(--transition),
+        box-shadow var(--transition),
+        filter var(--transition);
+}
+
+.login-btn:hover {
+    transform: translateY(-2px);
+
+    filter: brightness(1.1);
+
+    box-shadow:
+        0 10px 28px rgba(69, 54, 255, 0.3);
+}
+
+.login-btn:active {
+    transform: translateY(0);
+}
+
+.login-btn:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn-arrow {
+    font-size: 19px;
+    line-height: 1;
+}
+
+
+/* 13. SECURITY NOTE */
+
+.security-note {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 9px;
+
+    margin-top: 25px;
+    padding-top: 20px;
+
+    border-top: 1px solid rgba(20, 45, 80, 0.8);
+}
+
+.security-note > span {
+    flex-shrink: 0;
+
+    color: var(--green);
+    font-size: 11px;
+}
+
+.security-note p {
+    color: var(--text-muted);
+    font-size: 10px;
+    line-height: 1.7;
+    text-align: center;
+}
+
+
+/* 14. FOOTER */
+
+.login-footer {
+    width: 100%;
+    max-width: 420px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+
+    margin-top: 25px;
+
+    color: var(--text-muted);
+    font-size: 10px;
+}
+
+.login-footer a {
+    color: var(--text-secondary);
+
+    transition: color var(--transition);
+}
+
+.login-footer a:hover {
+    color: var(--cyan);
+}
+
+
+/* 15. TABLET */
+
+@media (max-width: 600px) {
+
+    .login-container {
+        padding: 28px 18px;
+    }
+
+    .login-card {
+        padding: 29px 24px;
+        border-radius: 17px;
+    }
+
+    .brand-logo {
+        font-size: 34px;
+    }
+
+    .login-heading h1 {
+        font-size: 24px;
+    }
+
+}
+
+
+/* 16. SMALL MOBILE */
+
+@media (max-width: 360px) {
+
+    .login-container {
+        padding: 22px 12px;
+    }
+
+    .login-card {
+        padding: 25px 17px;
+    }
+
+    .brand-logo {
+        font-size: 30px;
+    }
+
+    .login-brand > p {
+        font-size: 9px;
+        letter-spacing: 2px;
+    }
+
+    .login-heading h1 {
+        font-size: 22px;
+    }
+
+    .form-options {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 13px;
+    }
+
+    .login-footer {
+        font-size: 9px;
+    }
+
+}
+
+
+/* 17. REDUCED MOTION */
+
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+    }
+
+}
+
+/* ========================================
+   KEWA AUTH FORMS - ADDITIONAL STYLES
+======================================== */
+
+/* Hidden forms must remain hidden */
+[hidden] {
+    display: none !important;
+}
+
+/* Register, Reset and Password Setup links */
+.auth-switch {
+    margin-top: 22px;
+    color: var(--text-secondary);
+    font-size: 12px;
+    text-align: center;
+    line-height: 1.8;
+}
+
+.auth-switch a {
+    color: var(--cyan);
+    font-weight: 600;
+    text-decoration: none;
+    transition: color var(--transition);
+}
+
+.auth-switch a:hover {
+    color: #ffffff;
+    text-decoration: underline;
+}
+
+/* Consistent form layout across all sections */
+#loginSection,
+#registerSection,
+#setPasswordSection,
+#forgotSection {
+    width: 100%;
+    animation: authFadeIn 0.25s ease;
+}
+
+#loginForm,
+#registerForm,
+#setPasswordForm,
+#forgotForm {
+    width: 100%;
+}
+
+/* Password fields */
+#registerSection input[type="password"],
+#setPasswordSection input[type="password"],
+#forgotSection input {
+    width: 100%;
+}
+
+/* Improve buttons on mobile */
+.login-btn {
+    position: relative;
+    overflow: hidden;
+}
+
+.login-btn .btn-arrow {
+    transition: transform var(--transition);
+}
+
+.login-btn:hover .btn-arrow {
+    transform: translateX(4px);
+}
+
+/* Status message spacing */
+.login-message:not([hidden]) {
+    display: block;
+    overflow-wrap: anywhere;
+}
+
+/* Smooth section appearance */
+@keyframes authFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Small screen improvements */
+@media (max-width: 400px) {
+    .auth-switch {
+        font-size: 11px;
+    }
+
+    .login-card {
+        width: 100%;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #loginSection,
+    #registerSection,
+    #setPasswordSection,
+    #forgotSection {
+        animation: none;
+    }
+}
