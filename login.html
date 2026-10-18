@@ -1,0 +1,220 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#030817">
+
+  <title>KEWA Admin | Secure Login</title>
+
+  <link rel="stylesheet" href="css/login.css">
+</head>
+
+<body>
+  <main class="login-container">
+
+    <!-- BRAND -->
+    <header class="login-brand">
+      <a href="../index.html" class="brand-logo">
+        KEWA<span>DEV</span>
+      </a>
+      <p>PORTFOLIO ADMINISTRATION</p>
+    </header>
+
+    <section class="login-card">
+
+      <div class="login-icon">
+        <span>◆</span>
+      </div>
+
+      <!-- LOGIN -->
+      <section id="loginSection">
+        <div class="login-heading">
+          <h1>Welcome Back</h1>
+          <p>Sign in to manage your portfolio.</p>
+        </div>
+
+        <form id="loginForm">
+          <div class="form-group">
+            <label for="email">Admin Email</label>
+            <input type="email" id="email" name="email"
+              placeholder="Enter admin email"
+              autocomplete="username" required>
+          </div>
+
+          <div class="form-group">
+            <label for="password">Password</label>
+            <div class="password-wrapper">
+              <input type="password" id="password" name="password"
+                placeholder="Enter your password"
+                autocomplete="current-password" required>
+              <button type="button" id="togglePassword"
+                class="password-toggle" aria-label="Show password">
+                Show
+              </button>
+            </div>
+          </div>
+
+          <div class="form-options">
+            <label class="remember-option">
+              <input type="checkbox" id="rememberMe">
+              <span>Remember me</span>
+            </label>
+
+            <a href="#forgot" class="forgot-link"
+              data-open="forgotSection">Forgot password?</a>
+          </div>
+
+          <p id="loginMessage" class="login-message"
+            role="status" aria-live="polite" hidden></p>
+
+          <button type="submit" id="loginBtn" class="login-btn">
+            <span>Sign In</span>
+            <span class="btn-arrow">→</span>
+          </button>
+        </form>
+
+        <p class="auth-switch">
+          New admin? <a href="#register" data-open="registerSection">
+            Register account
+          </a>
+        </p>
+      </section>
+
+      <!-- REGISTER: OWNER INVITATION REQUIRED -->
+      <section id="registerSection" hidden>
+        <div class="login-heading">
+          <h1>Create Account</h1>
+          <p>Register an authorized KEWA administrator.</p>
+        </div>
+
+        <form id="registerForm">
+          <div class="form-group">
+            <label for="registerName">Full Name</label>
+            <input type="text" id="registerName" name="name"
+              placeholder="Enter your name" autocomplete="name" required>
+          </div>
+
+          <div class="form-group">
+            <label for="registerEmail">Admin Email</label>
+            <input type="email" id="registerEmail" name="email"
+              placeholder="Enter your email" autocomplete="email" required>
+          </div>
+
+          <div class="form-group">
+            <label for="inviteCode">Owner Invitation Code</label>
+            <input type="password" id="inviteCode" name="inviteCode"
+              placeholder="Enter invitation code" required>
+          </div>
+
+          <div class="form-group">
+            <label for="registerPassword">Create Password</label>
+            <input type="password" id="registerPassword" name="password"
+              placeholder="Minimum 8 characters"
+              minlength="8" autocomplete="new-password" required>
+          </div>
+
+          <p id="registerMessage" class="login-message"
+            role="status" aria-live="polite" hidden></p>
+
+          <button type="submit" class="login-btn">
+            <span>Create Account</span>
+            <span class="btn-arrow">→</span>
+          </button>
+        </form>
+
+        <p class="auth-switch">
+          Already registered?
+          <a href="#login" data-open="loginSection">Sign in</a>
+        </p>
+      </section>
+
+      <!-- SET PASSWORD -->
+      <section id="setPasswordSection" hidden>
+        <div class="login-heading">
+          <h1>Set Password</h1>
+          <p>Create a new password using your valid setup link.</p>
+        </div>
+
+        <form id="setPasswordForm">
+          <div class="form-group">
+            <label for="setupToken">Setup Token</label>
+            <input type="text" id="setupToken" name="token"
+              placeholder="Enter setup token" required>
+          </div>
+
+          <div class="form-group">
+            <label for="newPassword">New Password</label>
+            <input type="password" id="newPassword" name="password"
+              placeholder="Minimum 8 characters"
+              minlength="8" autocomplete="new-password" required>
+          </div>
+
+          <div class="form-group">
+            <label for="confirmPassword">Confirm Password</label>
+            <input type="password" id="confirmPassword"
+              name="confirmPassword" placeholder="Re-enter password"
+              minlength="8" autocomplete="new-password" required>
+          </div>
+
+          <p id="setPasswordMessage" class="login-message"
+            role="status" aria-live="polite" hidden></p>
+
+          <button type="submit" class="login-btn">
+            <span>Set Password</span>
+            <span class="btn-arrow">→</span>
+          </button>
+        </form>
+
+        <p class="auth-switch">
+          <a href="#login" data-open="loginSection">Back to login</a>
+        </p>
+      </section>
+
+      <!-- FORGOT PASSWORD -->
+      <section id="forgotSection" hidden>
+        <div class="login-heading">
+          <h1>Forgot Password?</h1>
+          <p>Request a secure password reset link by email.</p>
+        </div>
+
+        <form id="forgotForm">
+          <div class="form-group">
+            <label for="forgotEmail">Registered Admin Email</label>
+            <input type="email" id="forgotEmail" name="email"
+              placeholder="Enter registered email"
+              autocomplete="email" required>
+          </div>
+
+          <p id="forgotMessage" class="login-message"
+            role="status" aria-live="polite" hidden></p>
+
+          <button type="submit" class="login-btn">
+            <span>Send Reset Link</span>
+            <span class="btn-arrow">→</span>
+          </button>
+        </form>
+
+        <p class="auth-switch">
+          Remembered your password?
+          <a href="#login" data-open="loginSection">Sign in</a>
+        </p>
+      </section>
+
+      <div class="security-note">
+        <span>◆</span>
+        <p>Restricted access for authorized administrators only.</p>
+      </div>
+    </section>
+
+    <footer class="login-footer">
+      <p>© <span id="currentYear"></span> KEWADEV</p>
+      <a href="../index.html">Back to Website</a>
+    </footer>
+
+  </main>
+  <script src="js/main.js"></script>
+  <script src="js/login.js"></script>
+</body>
+</html>

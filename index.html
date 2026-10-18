@@ -1,0 +1,331 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>KEWA Admin Dashboard</title>
+
+    <link rel="stylesheet" href="css/dashboard.css">
+</head>
+
+<body>
+
+    <div class="admin-layout">
+
+        <!-- SIDEBAR -->
+        <aside class="sidebar" id="sidebar">
+
+            <div class="brand">
+                <h1>KEWA</h1>
+                <p>Portfolio Admin</p>
+            </div>
+
+            <nav class="sidebar-nav">
+
+                <a href="index.html" class="nav-link active">
+                    <span>▦</span>
+                    <span>Dashboard</span>
+                </a>
+
+                <a href="projects.html" class="nav-link">
+                    <span>▣</span>
+                    <span>Projects</span>
+                </a>
+
+                <a href="enquiries.html" class="nav-link">
+                    <span>✉</span>
+                    <span>Enquiries</span>
+                    <span class="nav-badge">0</span>
+                </a>
+
+                <a href="services.html" class="nav-link">
+                    <span>◇</span>
+                    <span>Services & Pricing</span>
+                </a>
+
+                <a href="profile.html" class="nav-link">
+                    <span>♙</span>
+                    <span>Profile & Resume</span>
+                </a>
+
+                <a href="settings.html" class="nav-link">
+                    <span>⚙</span>
+                    <span>Settings</span>
+                </a>
+
+            </nav>
+
+            <div class="sidebar-bottom">
+                <button type="button" class="nav-link logout-btn" id="logoutBtn">
+                    <span>⇥</span>
+                    <span>Logout</span>
+                </button>
+
+                <div class="admin-user">
+                    <div class="user-avatar">DK</div>
+
+                    <div class="user-info">
+                        <strong>Deepak Kewat</strong>
+                        <small>Administrator</small>
+                    </div>
+
+                    <span class="online-dot"></span>
+                </div>
+            </div>
+
+        </aside>
+
+
+        <!-- MAIN CONTENT -->
+        <main class="main-content">
+
+            <!-- TOPBAR -->
+            <header class="topbar">
+
+                <button
+                    type="button"
+                    class="menu-btn"
+                    id="menuBtn"
+                    aria-label="Toggle sidebar"
+                    aria-controls="sidebar"
+                    aria-expanded="false"
+                >
+                    ☰
+                </button>
+
+                <div class="search-box">
+                    <span>⌕</span>
+                    <input
+                        type="search"
+                        id="globalSearch"
+                        placeholder="Search anything..."
+                        aria-label="Search dashboard"
+                    >
+                </div>
+
+                <div class="topbar-actions">
+
+                    <button
+                        type="button"
+                        class="icon-btn"
+                        id="themeBtn"
+                        aria-label="Toggle theme"
+                    >
+                        ☾
+                    </button>
+
+                    <div class="topbar-user">
+                        <div class="user-avatar">DK</div>
+
+                        <div class="user-info">
+                            <strong>Deepak Kewat</strong>
+                            <small>Admin</small>
+                        </div>
+                    </div>
+
+                </div>
+
+            </header>
+
+
+            <!-- PAGE HEADING -->
+            <section class="page-heading">
+
+                <div>
+                    <h2>Dashboard</h2>
+                    <p>Welcome back, Deepak! Here's your portfolio overview.</p>
+                </div>
+
+                <div class="date-info">
+                    <span id="currentDate">Loading date...</span>
+                    <small id="currentTime"></small>
+                </div>
+
+            </section>
+
+
+            <!-- STATISTICS -->
+            <section class="stats-grid">
+
+                <article class="stat-card">
+                    <div class="stat-icon cyan">▣</div>
+
+                    <div class="stat-info">
+                        <p>Total Projects</p>
+                        <h3 id="totalProjects">0</h3>
+                        <small>Portfolio projects</small>
+                    </div>
+                </article>
+
+
+                <article class="stat-card">
+                    <div class="stat-icon purple">✉</div>
+
+                    <div class="stat-info">
+                        <p>Total Enquiries</p>
+                        <h3 id="totalEnquiries">0</h3>
+                        <small>Client messages</small>
+                    </div>
+                </article>
+
+
+                <article class="stat-card">
+                    <div class="stat-icon green">◈</div>
+
+                    <div class="stat-info">
+                        <p>Active Projects</p>
+                        <h3 id="activeProjects">0</h3>
+                        <small>Published projects</small>
+                    </div>
+                </article>
+
+
+                <article class="stat-card">
+                    <div class="stat-icon blue">◎</div>
+
+                    <div class="stat-info">
+                        <p>Website Visitors</p>
+                        <h3 id="websiteVisitors">—</h3>
+                        <small>Analytics not connected</small>
+                    </div>
+                </article>
+
+            </section>
+
+
+            <!-- DASHBOARD PANELS -->
+            <section class="dashboard-grid">
+
+                <!-- PROJECT OVERVIEW -->
+                <article class="panel">
+
+                    <div class="panel-header">
+                        <div>
+                            <h3>Projects Overview</h3>
+                            <p>Manage your portfolio projects</p>
+                        </div>
+
+                        <a href="pages/projects.html" class="text-link">
+                            View All →
+                        </a>
+                    </div>
+
+                    <div class="project-summary" id="projectSummary">
+
+                        <div class="empty-state">
+                            <div class="empty-icon">▤</div>
+                            <h4>No project data yet</h4>
+                            <p>Your project statistics will appear here.</p>
+
+                            <a href="pages/projects.html" class="primary-btn">
+                                Manage Projects
+                            </a>
+                        </div>
+
+                    </div>
+
+                </article>
+
+
+                <!-- RECENT ENQUIRIES -->
+                <article class="panel">
+
+                    <div class="panel-header">
+                        <div>
+                            <h3>Recent Enquiries</h3>
+                            <p>Latest client messages</p>
+                        </div>
+
+                        <a href="pages/enquiries.html" class="text-link">
+                            View All →
+                        </a>
+                    </div>
+
+                    <div class="enquiry-summary" id="enquirySummary">
+
+                        <div class="empty-state">
+                            <div class="empty-icon">✉</div>
+                            <h4>No enquiries yet</h4>
+                            <p>New client enquiries will appear here.</p>
+                        </div>
+
+                    </div>
+
+                </article>
+
+            </section>
+
+
+            <!-- QUICK ACTIONS -->
+            <section class="panel quick-actions-panel">
+
+                <div class="panel-header">
+                    <div>
+                        <h3>Quick Actions</h3>
+                        <p>Manage your portfolio faster</p>
+                    </div>
+                </div>
+
+                <div class="quick-actions">
+
+                    <a href="pages/projects.html" class="quick-action">
+                        <span class="action-icon purple">＋</span>
+                        <span>
+                            <strong>Add Project</strong>
+                            <small>Create a new portfolio project</small>
+                        </span>
+                        <span class="action-arrow">→</span>
+                    </a>
+
+                    <a href="pages/services.html" class="quick-action">
+                        <span class="action-icon cyan">◇</span>
+                        <span>
+                            <strong>Manage Services</strong>
+                            <small>Update services and pricing</small>
+                        </span>
+                        <span class="action-arrow">→</span>
+                    </a>
+
+                    <a href="pages/profile.html" class="quick-action">
+                        <span class="action-icon green">♙</span>
+                        <span>
+                            <strong>Edit Profile</strong>
+                            <small>Update your information</small>
+                        </span>
+                        <span class="action-arrow">→</span>
+                    </a>
+
+                    <a href="pages/settings.html" class="quick-action">
+                        <span class="action-icon blue">⚙</span>
+                        <span>
+                            <strong>Settings</strong>
+                            <small>Configure your admin panel</small>
+                        </span>
+                        <span class="action-arrow">→</span>
+                    </a>
+
+                </div>
+
+            </section>
+
+
+            <!-- FOOTER -->
+            <footer class="admin-footer">
+                <p>© <span id="currentYear"></span> KEWA Portfolio Admin</p>
+                <p>Built with care by KEWADEV</p>
+            </footer>
+
+        </main>
+
+    </div>
+
+
+    <!-- DASHBOARD JAVASCRIPT -->
+    <script src="js/main.js"></script>
+    <script src="js/dashboard.js"></script>
+
+</body>
+</html>

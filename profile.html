@@ -1,0 +1,606 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="KEWADEV Admin Profile Settings">
+
+    <title>Admin Profile | KEWADEV</title>
+
+    <link rel="stylesheet" href="css/profile.css">
+</head>
+
+<body>
+
+    <!-- SIDEBAR -->
+
+    <aside class="sidebar" id="sidebar">
+
+        <div class="sidebar-brand">
+            <div class="brand-logo">K</div>
+
+            <div class="brand-info">
+                <h2>KEWADEV</h2>
+                <span>Admin Panel</span>
+            </div>
+        </div>
+
+        <div class="sidebar-section">
+            <p class="sidebar-label">MAIN MENU</p>
+
+            <nav class="sidebar-nav">
+
+                <a href="dashboard.html" class="nav-link">
+                    <span class="nav-icon">⌂</span>
+                    <span>Dashboard</span>
+                </a>
+
+                <a href="projects.html" class="nav-link">
+                    <span class="nav-icon">▣</span>
+                    <span>Projects</span>
+                </a>
+
+                <a href="services.html" class="nav-link">
+                    <span class="nav-icon">⚙</span>
+                    <span>Services</span>
+                </a>
+
+                <a href="enquiries.html" class="nav-link">
+                    <span class="nav-icon">✉</span>
+                    <span>Enquiries</span>
+                </a>
+
+                <a href="profile.html" class="nav-link active">
+                    <span class="nav-icon">◉</span>
+                    <span>My Profile</span>
+                </a>
+
+            </nav>
+        </div>
+
+        <div class="sidebar-bottom">
+
+            <div class="sidebar-user">
+                <div class="user-avatar" id="sidebarAvatar">D</div>
+
+                <div class="user-details">
+                    <strong id="sidebarName">Admin</strong>
+                    <span>Administrator</span>
+                </div>
+            </div>
+
+            <button type="button" class="logout-btn" id="logoutBtn">
+                <span>↪</span>
+                <span>Logout</span>
+            </button>
+
+        </div>
+
+    </aside>
+
+
+    <!-- MAIN CONTENT -->
+
+    <main class="main-content">
+
+        <!-- TOPBAR -->
+
+        <header class="topbar">
+
+            <div class="topbar-left">
+
+                <button
+                    type="button"
+                    class="menu-btn"
+                    id="menuBtn"
+                    aria-label="Toggle sidebar"
+                >
+                    ☰
+                </button>
+
+                <div class="breadcrumb">
+                    <span>Admin</span>
+                    <span>/</span>
+                    <strong>My Profile</strong>
+                </div>
+
+            </div>
+
+            <div class="topbar-actions">
+
+                <span class="admin-status">
+                    <span class="status-dot"></span>
+                    Online
+                </span>
+
+                <button
+                    type="button"
+                    class="icon-btn"
+                    id="themeToggle"
+                    aria-label="Toggle theme"
+                >
+                    ☼
+                </button>
+
+            </div>
+
+        </header>
+
+
+        <!-- PAGE HEADING -->
+
+        <section class="page-heading">
+
+            <div>
+                <span class="eyebrow">ACCOUNT SETTINGS</span>
+
+                <h1>My Profile</h1>
+
+                <p>
+                    Manage your personal information and account security.
+                </p>
+            </div>
+
+        </section>
+
+
+        <!-- PROFILE LAYOUT -->
+
+        <section class="profile-layout">
+
+            <!-- PROFILE SUMMARY -->
+
+            <article class="panel profile-summary">
+
+                <div class="profile-cover">
+                    <span class="cover-label">ADMIN ACCOUNT</span>
+                </div>
+
+                <div class="profile-summary-content">
+
+                    <div class="profile-avatar-wrapper">
+
+                        <div class="profile-avatar" id="profileAvatar">
+                            D
+                        </div>
+
+                        <span class="avatar-status"></span>
+
+                    </div>
+
+                    <h2 id="profileDisplayName">Admin User</h2>
+
+                    <p class="profile-email" id="profileDisplayEmail">
+                        admin@example.com
+                    </p>
+
+                    <span class="role-badge">Administrator</span>
+
+                    <div class="profile-summary-divider"></div>
+
+                    <div class="summary-item">
+                        <span>Account Status</span>
+                        <strong class="account-active">Active</strong>
+                    </div>
+
+                    <div class="summary-item">
+                        <span>Account Type</span>
+                        <strong>Admin</strong>
+                    </div>
+
+                    <div class="summary-item">
+                        <span>Last Updated</span>
+                        <strong id="profileLastUpdated">
+                            Not available
+                        </strong>
+                    </div>
+
+                </div>
+
+            </article>
+
+
+            <!-- PROFILE DETAILS -->
+
+            <div class="profile-main-column">
+
+                <!-- PERSONAL INFORMATION -->
+
+                <article class="panel">
+
+                    <div class="panel-header">
+
+                        <div>
+                            <h2>Personal Information</h2>
+                            <p>Update your profile details.</p>
+                        </div>
+
+                        <span class="section-icon">◉</span>
+
+                    </div>
+
+                    <form id="profileForm">
+
+                        <div class="form-body">
+
+                            <!-- PROFILE PHOTO -->
+
+                            <div class="photo-upload-section">
+
+                                <div
+                                    class="upload-avatar"
+                                    id="uploadAvatarPreview"
+                                >
+                                    D
+                                </div>
+
+                                <div class="photo-upload-info">
+
+                                    <h3>Profile Photo</h3>
+
+                                    <p>
+                                        Choose a photo from your device.
+                                    </p>
+
+                                    <div class="photo-actions">
+
+                                        <label
+                                            for="profilePhoto"
+                                            class="secondary-btn"
+                                        >
+                                            Choose Photo
+                                        </label>
+
+                                        <button
+                                            type="button"
+                                            class="text-btn"
+                                            id="removePhotoBtn"
+                                        >
+                                            Remove
+                                        </button>
+
+                                    </div>
+
+                                    <input
+                                        type="file"
+                                        id="profilePhoto"
+                                        accept="image/png,image/jpeg,image/webp"
+                                        hidden
+                                    >
+
+                                    <small>
+                                        JPG, PNG or WEBP. Maximum 2 MB.
+                                    </small>
+
+                                </div>
+
+                            </div>
+
+                            <div class="form-divider"></div>
+
+                            <!-- FORM FIELDS -->
+
+                            <div class="form-grid">
+
+                                <div class="form-group">
+                                    <label for="profileName">
+                                        Full Name
+                                    </label>
+
+                                    <input
+                                        type="text"
+                                        id="profileName"
+                                        name="profileName"
+                                        placeholder="Enter your full name"
+                                        maxlength="80"
+                                        required
+                                    >
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="profileUsername">
+                                        Username
+                                    </label>
+
+                                    <input
+                                        type="text"
+                                        id="profileUsername"
+                                        name="profileUsername"
+                                        placeholder="Enter username"
+                                        maxlength="40"
+                                        required
+                                    >
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="profileEmail">
+                                        Email Address
+                                    </label>
+
+                                    <input
+                                        type="email"
+                                        id="profileEmail"
+                                        name="profileEmail"
+                                        placeholder="Enter email address"
+                                        maxlength="120"
+                                        required
+                                    >
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="profilePhone">
+                                        Phone Number
+                                    </label>
+
+                                    <input
+                                        type="tel"
+                                        id="profilePhone"
+                                        name="profilePhone"
+                                        placeholder="Enter phone number"
+                                        maxlength="20"
+                                    >
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="profileRole">
+                                        Account Role
+                                    </label>
+
+                                    <input
+                                        type="text"
+                                        id="profileRole"
+                                        value="Administrator"
+                                        readonly
+                                    >
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="profileWebsite">
+                                        Website
+                                    </label>
+
+                                    <input
+                                        type="url"
+                                        id="profileWebsite"
+                                        name="profileWebsite"
+                                        placeholder="https://example.com"
+                                        maxlength="200"
+                                    >
+                                </div>
+
+                            </div>
+
+                            <div class="form-group full-width">
+                                <label for="profileBio">About Me</label>
+
+                                <textarea
+                                    id="profileBio"
+                                    name="profileBio"
+                                    rows="4"
+                                    maxlength="500"
+                                    placeholder="Write something about yourself..."
+                                ></textarea>
+
+                                <div class="character-count">
+                                    <span id="bioCharacterCount">0</span>/500
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <div class="form-actions">
+
+                            <button
+                                type="reset"
+                                class="secondary-btn"
+                                id="resetProfileBtn"
+                            >
+                                Reset
+                            </button>
+
+                            <button
+                                type="submit"
+                                class="primary-btn"
+                                id="saveProfileBtn"
+                            >
+                                Save Changes
+                            </button>
+
+                        </div>
+
+                    </form>
+
+                </article>
+
+                <!-- ACCOUNT SECURITY -->
+
+                <article class="panel security-panel">
+
+                    <div class="panel-header">
+
+                        <div>
+                            <h2>Account Security</h2>
+
+                            <p>
+                                Manage your password and security settings.
+                            </p>
+                        </div>
+
+                        <span class="section-icon">◇</span>
+
+                    </div>
+
+                    <form id="passwordForm">
+
+                        <div class="form-body">
+
+                            <div class="form-group">
+
+                                <label for="currentPassword">
+                                    Current Password
+                                </label>
+
+                                <div class="password-input">
+
+                                    <input
+                                        type="password"
+                                        id="currentPassword"
+                                        name="currentPassword"
+                                        placeholder="Enter current password"
+                                        autocomplete="current-password"
+                                        required
+                                    >
+
+                                    <button
+                                        type="button"
+                                        class="password-toggle"
+                                        data-password-target="currentPassword"
+                                        aria-label="Show password"
+                                    >
+                                        Show
+                                    </button>
+
+                                </div>
+
+                            </div>
+
+
+                            <div class="form-grid">
+
+                                <div class="form-group">
+
+                                    <label for="newPassword">
+                                        New Password
+                                    </label>
+
+                                    <div class="password-input">
+
+                                        <input
+                                            type="password"
+                                            id="newPassword"
+                                            name="newPassword"
+                                            placeholder="Enter new password"
+                                            minlength="8"
+                                            autocomplete="new-password"
+                                            required
+                                        >
+
+                                        <button
+                                            type="button"
+                                            class="password-toggle"
+                                            data-password-target="newPassword"
+                                            aria-label="Show password"
+                                        >
+                                            Show
+                                        </button>
+
+                                    </div>
+
+                                </div>
+
+
+                                <div class="form-group">
+
+                                    <label for="confirmPassword">
+                                        Confirm New Password
+                                    </label>
+
+                                    <div class="password-input">
+
+                                        <input
+                                            type="password"
+                                            id="confirmPassword"
+                                            name="confirmPassword"
+                                            placeholder="Confirm new password"
+                                            minlength="8"
+                                            autocomplete="new-password"
+                                            required
+                                        >
+
+                                        <button
+                                            type="button"
+                                            class="password-toggle"
+                                            data-password-target="confirmPassword"
+                                            aria-label="Show password"
+                                        >
+                                            Show
+                                        </button>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                            <p class="security-note">
+                                Use at least 8 characters for your new password.
+                            </p>
+
+                        </div>
+
+
+                        <div class="form-actions">
+
+                            <button
+                                type="reset"
+                                class="secondary-btn"
+                            >
+                                Clear Fields
+                            </button>
+
+                            <button
+                                type="submit"
+                                class="primary-btn"
+                                id="updatePasswordBtn"
+                            >
+                                Update Password
+                            </button>
+
+                        </div>
+
+                    </form>
+
+                </article>
+
+            </div>
+
+        </section>
+
+
+        <!-- NOTIFICATION MESSAGE -->
+
+        <div
+            class="profile-message"
+            id="profileMessage"
+            role="status"
+            aria-live="polite"
+            hidden
+        ></div>
+
+
+        <!-- FOOTER -->
+
+        <footer class="admin-footer">
+
+            <p>
+                © <span id="currentYear"></span> KEWADEV.
+                All rights reserved.
+            </p>
+
+            <p>Built with care by KEWADEV</p>
+
+        </footer>
+
+    </main>
+
+
+    <!-- JAVASCRIPT -->
+    <script src="js/main.js"></script>
+
+    <script src="js/profile.js"></script>
+
+</body>
+
+</html>

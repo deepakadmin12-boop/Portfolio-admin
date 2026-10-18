@@ -1,0 +1,509 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#080d19">
+
+    <title>Services | KEWADEV Admin</title>
+
+    <link rel="stylesheet" href="css/services.css">
+</head>
+
+<body>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+
+        <a href="../index.html" class="brand">
+            <div class="brand-icon">K</div>
+            <div class="brand-text">KEWA<span>DEV</span></div>
+        </a>
+
+        <p class="sidebar-label">MAIN MENU</p>
+
+        <nav class="sidebar-nav">
+
+            <a href="../index.html" class="nav-link">
+                <span class="nav-icon">▦</span>
+                <span>Dashboard</span>
+            </a>
+
+            <a href="projects.html" class="nav-link">
+                <span class="nav-icon">▣</span>
+                <span>Projects</span>
+            </a>
+
+            <a href="enquiries.html" class="nav-link">
+                <span class="nav-icon">✉</span>
+                <span>Enquiries</span>
+            </a>
+
+            <a href="services.html" class="nav-link active">
+                <span class="nav-icon">◇</span>
+                <span>Services</span>
+            </a>
+
+            <a href="profile.html" class="nav-link">
+                <span class="nav-icon">◎</span>
+                <span>Profile</span>
+            </a>
+
+            <a href="settings.html" class="nav-link">
+                <span class="nav-icon">⚙</span>
+                <span>Settings</span>
+            </a>
+
+        </nav>
+
+        <div class="sidebar-bottom">
+
+            <button type="button" class="logout-btn" id="logoutBtn">
+                <span>⇥</span>
+                <span>Logout</span>
+            </button>
+
+            <div class="admin-user">
+                <div class="user-avatar">D</div>
+
+                <div class="user-info">
+                    <strong>Deepak Kewat</strong>
+                    <small>Administrator</small>
+                </div>
+
+                <span class="online-dot"></span>
+            </div>
+
+        </div>
+
+    </aside>
+
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+
+        <!-- TOPBAR -->
+        <header class="topbar">
+
+            <div class="topbar-left">
+
+                <button
+                    type="button"
+                    class="menu-btn"
+                    id="menuBtn"
+                    aria-label="Toggle navigation"
+                    aria-controls="sidebar"
+                    aria-expanded="false"
+                >
+                    ☰
+                </button>
+
+                <div class="breadcrumb">
+                    Dashboard <span>/</span>
+                    <strong>Services</strong>
+                </div>
+
+            </div>
+
+            <div class="topbar-actions">
+
+                <button
+                    type="button"
+                    class="icon-btn"
+                    id="themeToggle"
+                    aria-label="Toggle light and dark theme"
+                    title="Toggle theme"
+                >
+                    ☼
+                </button>
+
+            </div>
+
+        </header>
+
+
+        <!-- PAGE HEADING -->
+        <section class="page-heading">
+
+            <div>
+                <p class="eyebrow">BUSINESS MANAGEMENT</p>
+
+                <h1>My Services</h1>
+
+                <p>
+                    Manage the services displayed on your KEWADEV portfolio.
+                </p>
+            </div>
+
+            <button
+                type="button"
+                class="primary-btn"
+                id="addServiceBtn"
+            >
+                <span>+</span>
+                Add Service
+            </button>
+
+        </section>
+
+
+        <!-- STATS -->
+        <section class="service-stats">
+
+            <article class="stat-card">
+                <div class="stat-icon purple">◇</div>
+
+                <div class="stat-info">
+                    <p>Total Services</p>
+                    <h2 id="totalServices">0</h2>
+                </div>
+            </article>
+
+            <article class="stat-card">
+                <div class="stat-icon green">✓</div>
+
+                <div class="stat-info">
+                    <p>Active Services</p>
+                    <h2 id="activeServices">0</h2>
+                </div>
+            </article>
+
+            <article class="stat-card">
+                <div class="stat-icon cyan">◷</div>
+
+                <div class="stat-info">
+                    <p>Inactive Services</p>
+                    <h2 id="inactiveServices">0</h2>
+                </div>
+            </article>
+
+        </section>
+
+
+        <!-- SERVICES PANEL -->
+        <section class="panel">
+
+            <div class="panel-header">
+
+                <div>
+                    <h2>All Services</h2>
+
+                    <p>
+                        Add, edit, activate or remove your services.
+                    </p>
+                </div>
+
+                <span class="record-count" id="serviceRecordCount">
+                    0 services
+                </span>
+
+            </div>
+
+
+            <!-- SEARCH AND FILTERS -->
+            <div class="service-toolbar">
+
+                <label class="search-box">
+
+                    <span>⌕</span>
+
+                    <input
+                        type="search"
+                        id="serviceSearch"
+                        placeholder="Search services..."
+                        autocomplete="off"
+                    >
+
+                </label>
+
+                <select id="serviceStatusFilter" aria-label="Filter services">
+                    <option value="all">All Services</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                </select>
+
+                <select id="serviceSortFilter" aria-label="Sort services">
+                    <option value="newest">Newest First</option>
+                    <option value="oldest">Oldest First</option>
+                    <option value="name">Name A–Z</option>
+                </select>
+
+            </div>
+
+
+            <!-- STATUS MESSAGE -->
+            <div
+                class="page-message"
+                id="servicePageMessage"
+                role="status"
+                aria-live="polite"
+            ></div>
+
+
+            <!-- SERVICES TABLE -->
+            <div class="table-wrapper">
+
+                <table class="services-table">
+
+                    <thead>
+                        <tr>
+                            <th>SERVICE</th>
+                            <th>CATEGORY</th>
+                            <th>DESCRIPTION</th>
+                            <th>STATUS</th>
+                            <th>ACTIONS</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="servicesTableBody">
+                        <!-- Services rendered by JavaScript -->
+                    </tbody>
+
+                </table>
+
+            </div>
+
+
+            <!-- EMPTY STATE -->
+            <div class="empty-state" id="serviceEmptyState">
+
+                <div class="empty-icon">◇</div>
+
+                <h3 id="serviceEmptyTitle">No services found</h3>
+
+                <p id="serviceEmptyDescription">
+                    Add your first service to manage what you offer to clients.
+                </p>
+
+                <button
+                    type="button"
+                    class="primary-btn"
+                    id="emptyAddServiceBtn"
+                >
+                    + Add Your First Service
+                </button>
+
+            </div>
+
+
+            <!-- PAGINATION -->
+            <div class="pagination">
+
+                <p id="servicePaginationInfo">
+                    Showing 0 of 0 services
+                </p>
+
+                <div class="pagination-buttons">
+
+                    <button
+                        type="button"
+                        id="previousServicePageBtn"
+                        aria-label="Previous page"
+                        disabled
+                    >
+                        ←
+                    </button>
+
+                    <span id="currentServicePage">1</span>
+
+                    <button
+                        type="button"
+                        id="nextServicePageBtn"
+                        aria-label="Next page"
+                        disabled
+                    >
+                        →
+                    </button>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- FOOTER -->
+        <footer class="admin-footer">
+
+            <p>
+                © <span id="currentYear"></span> KEWADEV.
+                All rights reserved.
+            </p>
+
+            <a href="../index.html">Back to Dashboard</a>
+
+        </footer>
+
+    </main>
+
+
+    <!-- ADD / EDIT SERVICE MODAL -->
+    <div
+        class="modal"
+        id="serviceModal"
+        hidden
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="serviceModalTitle"
+    >
+
+        <div class="modal-backdrop" data-close-service-modal></div>
+
+        <div class="modal-content">
+
+            <div class="modal-header">
+
+                <div>
+                    <h2 id="serviceModalTitle">Add New Service</h2>
+
+                    <p>
+                        Enter the details of the service you offer.
+                    </p>
+                </div>
+
+                <button
+                    type="button"
+                    class="close-btn"
+                    id="closeServiceModal"
+                    aria-label="Close service form"
+                >
+                    ×
+                </button>
+
+            </div>
+
+
+            <!-- SERVICE FORM -->
+            <form id="serviceForm">
+
+                <input type="hidden" id="serviceId">
+
+                <div class="form-group">
+
+                    <label for="serviceName">
+                        Service Name *
+                    </label>
+
+                    <input
+                        type="text"
+                        id="serviceName"
+                        name="serviceName"
+                        placeholder="e.g. Web Development"
+                        maxlength="100"
+                        required
+                    >
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="serviceCategory">
+                        Category *
+                    </label>
+
+                    <select
+                        id="serviceCategory"
+                        name="serviceCategory"
+                        required
+                    >
+                        <option value="">Select Category</option>
+                        <option value="Development">Development</option>
+                        <option value="Design">Design</option>
+                        <option value="Maintenance">Maintenance</option>
+                        <option value="Consulting">Consulting</option>
+                        <option value="Other">Other</option>
+                    </select>
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="serviceIcon">
+                        Icon / Emoji
+                    </label>
+
+                    <input
+                        type="text"
+                        id="serviceIcon"
+                        name="serviceIcon"
+                        placeholder="e.g. 💻"
+                        maxlength="20"
+                    >
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="serviceDescription">
+                        Description *
+                    </label>
+
+                    <textarea
+                        id="serviceDescription"
+                        name="serviceDescription"
+                        rows="5"
+                        maxlength="1000"
+                        placeholder="Describe the service you provide..."
+                        required
+                    ></textarea>
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="serviceStatus">
+                        Service Status
+                    </label>
+
+                    <select
+                        id="serviceStatus"
+                        name="serviceStatus"
+                        required
+                    >
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                    </select>
+
+                </div>
+
+
+                <div class="modal-actions">
+
+                    <button
+                        type="button"
+                        class="secondary-btn"
+                        id="cancelServiceBtn"
+                    >
+                        Cancel
+                    </button>
+
+                    <button
+                        type="submit"
+                        class="primary-btn"
+                        id="saveServiceBtn"
+                    >
+                        Save Service
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+
+    <!-- JAVASCRIPT -->
+    <script src="js/main.js"></script>
+    <script src="js/services.js"></script>
+
+</body>
+
+</html>

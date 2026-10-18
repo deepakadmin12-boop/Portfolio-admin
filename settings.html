@@ -1,0 +1,360 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0b1020">
+
+  <title>Settings | KEWA Admin</title>
+
+  <!-- SETTINGS CSS -->
+  <link rel="stylesheet" href="css/settings.css">
+
+  <!-- FONT -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+
+<body>
+
+<div class="admin-layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="adminSidebar">
+
+    <div class="sidebar-brand">
+      <div class="brand-logo">K</div>
+      <div class="brand-text">
+        <h2>KEWA</h2>
+        <span>ADMIN PANEL</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <p class="nav-section-title">MAIN MENU</p>
+
+      <a href="../index.html" class="nav-link">
+        <i data-lucide="layout-dashboard"></i>
+        <span>Dashboard</span>
+      </a>
+
+      <a href="projects.html" class="nav-link">
+        <i data-lucide="folder-kanban"></i>
+        <span>Projects</span>
+      </a>
+
+      <a href="enquiries.html" class="nav-link">
+        <i data-lucide="messages-square"></i>
+        <span>Enquiries</span>
+      </a>
+
+      <a href="services.html" class="nav-link">
+        <i data-lucide="layers"></i>
+        <span>Services</span>
+      </a>
+
+      <p class="nav-section-title">MANAGEMENT</p>
+
+      <a href="profile.html" class="nav-link">
+        <i data-lucide="user-round"></i>
+        <span>My Profile</span>
+      </a>
+
+      <a href="settings.html" class="nav-link active" aria-current="page">
+        <i data-lucide="settings"></i>
+        <span>Settings</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-bottom">
+      <div class="sidebar-user">
+        <div class="user-avatar">K</div>
+        <div class="user-details">
+          <strong>KEWA Admin</strong>
+          <span>Administrator</span>
+        </div>
+      </div>
+
+      <button type="button" class="logout-button" id="logoutButton">
+        <i data-lucide="log-out"></i>
+        <span>Logout</span>
+      </button>
+    </div>
+
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main-content">
+
+    <!-- HEADER -->
+    <header class="top-header">
+      <div class="header-left">
+        <button type="button" class="menu-toggle" id="menuToggle"
+          aria-label="Toggle navigation" aria-controls="adminSidebar"
+          aria-expanded="false">
+          <i data-lucide="menu"></i>
+        </button>
+
+        <div class="breadcrumb">
+          <span>Admin</span>
+          <i data-lucide="chevron-right"></i>
+          <strong>Settings</strong>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <button type="button" class="icon-button" id="themeToggle"
+          aria-label="Toggle theme">
+          <i data-lucide="sun-moon"></i>
+        </button>
+        <div class="header-avatar">K</div>
+      </div>
+    </header>
+
+    <!-- PAGE -->
+    <section class="settings-page">
+
+      <div class="settings-heading">
+        <div>
+          <span class="settings-eyebrow">CONTROL CENTER</span>
+          <h1>Settings</h1>
+          <p>Manage your KEWA admin panel preferences.</p>
+        </div>
+
+        <button type="button" class="settings-save-top"
+          id="saveAllSettingsButton">
+          <i data-lucide="save"></i>
+          Save Changes
+        </button>
+      </div>
+
+      <div class="settings-message" id="settingsMessage"
+        role="status" aria-live="polite"></div>
+
+      <form id="settingsForm">
+
+        <!-- GENERAL -->
+        <section class="settings-card">
+          <div class="settings-card-heading">
+            <div class="settings-icon blue">
+              <i data-lucide="building-2"></i>
+            </div>
+            <div>
+              <h2>General Settings</h2>
+              <p>Basic information about your business.</p>
+            </div>
+          </div>
+
+          <div class="settings-grid">
+            <div class="settings-field">
+              <label for="businessName">Business Name</label>
+              <input type="text" id="businessName" name="businessName"
+                value="KEWA Software Development"
+                placeholder="Enter business name">
+            </div>
+
+            <div class="settings-field">
+              <label for="businessEmail">Business Email</label>
+              <input type="email" id="businessEmail" name="businessEmail"
+                placeholder="Enter business email">
+            </div>
+
+            <div class="settings-field">
+              <label for="businessWebsite">Website URL</label>
+              <input type="url" id="businessWebsite" name="businessWebsite"
+                placeholder="https://example.com">
+            </div>
+
+            <div class="settings-field">
+              <label for="businessCurrency">Default Currency</label>
+              <select id="businessCurrency" name="businessCurrency">
+                <option value="INR">INR — Indian Rupee (₹)</option>
+                <option value="USD">USD — US Dollar ($)</option>
+                <option value="EUR">EUR — Euro (€)</option>
+                <option value="GBP">GBP — British Pound (£)</option>
+              </select>
+            </div>
+
+            <div class="settings-field full-width">
+              <label for="businessDescription">Business Description</label>
+              <textarea id="businessDescription" name="businessDescription"
+                rows="4" placeholder="Describe your business and services"></textarea>
+            </div>
+          </div>
+        </section>
+
+        <!-- NOTIFICATIONS -->
+        <section class="settings-card">
+          <div class="settings-card-heading">
+            <div class="settings-icon purple">
+              <i data-lucide="bell-ring"></i>
+            </div>
+            <div>
+              <h2>Notifications</h2>
+              <p>Choose your notification preferences.</p>
+            </div>
+          </div>
+
+          <div class="settings-options">
+            <label class="settings-option">
+              <span class="option-text">
+                <strong>New Enquiries</strong>
+                <small>Notify when a client submits an enquiry.</small>
+              </span>
+              <input type="checkbox" id="notifyEnquiries" name="notifyEnquiries" checked>
+              <span class="toggle-switch"></span>
+            </label>
+
+            <label class="settings-option">
+              <span class="option-text">
+                <strong>Project Updates</strong>
+                <small>Notify when project information changes.</small>
+              </span>
+              <input type="checkbox" id="notifyProjects" name="notifyProjects" checked>
+              <span class="toggle-switch"></span>
+            </label>
+
+            <label class="settings-option">
+              <span class="option-text">
+                <strong>Service Updates</strong>
+                <small>Notify when services are updated.</small>
+              </span>
+              <input type="checkbox" id="notifyServices" name="notifyServices">
+              <span class="toggle-switch"></span>
+            </label>
+          </div>
+        </section>
+
+        <!-- APPEARANCE -->
+        <section class="settings-card">
+          <div class="settings-card-heading">
+            <div class="settings-icon cyan">
+              <i data-lucide="palette"></i>
+            </div>
+            <div>
+              <h2>Appearance</h2>
+              <p>Customize the look of your admin panel.</p>
+            </div>
+          </div>
+
+          <div class="settings-grid">
+            <div class="settings-field">
+              <label for="themePreference">Color Theme</label>
+              <select id="themePreference" name="themePreference">
+                <option value="dark">Dark Neon</option>
+                <option value="light">Light</option>
+                <option value="system">System Default</option>
+              </select>
+            </div>
+
+            <div class="settings-field">
+              <label for="languagePreference">Language</label>
+              <select id="languagePreference" name="languagePreference">
+                <option value="en">English</option>
+                <option value="hi">Hindi</option>
+              </select>
+            </div>
+          </div>
+        </section>
+
+        <!-- BACKEND -->
+        <section class="settings-card">
+          <div class="settings-card-heading">
+            <div class="settings-icon green">
+              <i data-lucide="database"></i>
+            </div>
+            <div>
+              <h2>Backend Connection</h2>
+              <p>Configure your backend API endpoint.</p>
+            </div>
+          </div>
+
+          <div class="settings-field">
+            <label for="apiBaseUrl">Backend API Base URL</label>
+            <input type="url" id="apiBaseUrl" name="apiBaseUrl"
+              placeholder="https://your-backend.onrender.com">
+            <small class="field-help">
+              Enter your backend URL when it is ready.
+            </small>
+          </div>
+
+          <div class="connection-info">
+            <i data-lucide="info"></i>
+            <p id="connectionStatus">Backend connection has not been verified.</p>
+          </div>
+        </section>
+
+        <!-- SECURITY -->
+        <section class="settings-card">
+          <div class="settings-card-heading">
+            <div class="settings-icon red">
+              <i data-lucide="shield-check"></i>
+            </div>
+            <div>
+              <h2>Security</h2>
+              <p>Account access and security information.</p>
+            </div>
+          </div>
+
+          <div class="security-notice">
+            <i data-lucide="lock-keyhole"></i>
+            <div>
+              <strong>Administrator Access</strong>
+              <p>
+                Admin login and authorization must be enforced by the backend.
+                Frontend-only page hiding does not secure your data.
+              </p>
+            </div>
+          </div>
+
+          <a href="login.html" class="settings-secondary-link">
+            <i data-lucide="log-in"></i>
+            Open Login Page
+          </a>
+        </section>
+
+        <!-- ACTIONS -->
+        <div class="settings-bottom-actions">
+          <button type="button" class="settings-reset-button"
+            id="resetSettingsButton">
+            <i data-lucide="rotate-ccw"></i>
+            Reset Form
+          </button>
+
+          <button type="submit" class="settings-save-button">
+            <i data-lucide="check-circle"></i>
+            Save Settings
+          </button>
+        </div>
+
+      </form>
+
+      <footer class="admin-footer">
+        <p>
+          © <span id="currentYear"></span>
+          KEWA Software Development. All rights reserved.
+        </p>
+        <span>Admin Panel</span>
+      </footer>
+
+    </section>
+  </main>
+</div>
+
+  <!-- ICONS -->
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+
+<script>
+  if (window.lucide) {
+    window.lucide.createIcons();
+  }
+</script>
+
+<!-- SETTINGS JS -->
+  <script src="js/main.js"></script>
+<script src="js/settings.js"></script>
+
+</body>
+</html>

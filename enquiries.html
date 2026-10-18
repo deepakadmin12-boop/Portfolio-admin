@@ -1,0 +1,441 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="theme-color" content="#080d19">
+
+    <title>Enquiries | KEWADEV Admin</title>
+
+    <link rel="stylesheet" href="css/enquiries.css">
+</head>
+
+<body>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+
+        <a href="../index.html" class="brand">
+            <div class="brand-icon">K</div>
+
+            <div class="brand-text">
+                KEWA<span>DEV</span>
+            </div>
+        </a>
+
+        <p class="sidebar-label">MAIN MENU</p>
+
+        <nav class="sidebar-nav">
+
+            <a href="../index.html" class="nav-link">
+                <span class="nav-icon">▦</span>
+                <span>Dashboard</span>
+            </a>
+
+            <a href="projects.html" class="nav-link">
+                <span class="nav-icon">▣</span>
+                <span>Projects</span>
+            </a>
+
+            <a href="enquiries.html" class="nav-link active">
+                <span class="nav-icon">✉</span>
+                <span>Enquiries</span>
+            </a>
+
+            <a href="services.html" class="nav-link">
+                <span class="nav-icon">◇</span>
+                <span>Services</span>
+            </a>
+
+            <a href="profile.html" class="nav-link">
+                <span class="nav-icon">◎</span>
+                <span>Profile</span>
+            </a>
+
+            <a href="settings.html" class="nav-link">
+                <span class="nav-icon">⚙</span>
+                <span>Settings</span>
+            </a>
+
+        </nav>
+
+        <div class="sidebar-bottom">
+
+            <button type="button" class="logout-btn" id="logoutBtn">
+                <span>⇥</span>
+                <span>Logout</span>
+            </button>
+
+            <div class="admin-user">
+
+                <div class="user-avatar">D</div>
+
+                <div class="user-info">
+                    <strong>Deepak Kewat</strong>
+                    <small>Administrator</small>
+                </div>
+
+                <span class="online-dot"></span>
+
+            </div>
+
+        </div>
+
+    </aside>
+
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+
+        <!-- TOPBAR -->
+        <header class="topbar">
+
+            <div class="topbar-left">
+
+                <button
+                    type="button"
+                    class="menu-btn"
+                    id="menuBtn"
+                    aria-label="Toggle navigation"
+                    aria-controls="sidebar"
+                    aria-expanded="false"
+                >
+                    ☰
+                </button>
+
+                <div class="breadcrumb">
+                    Dashboard <span>/</span>
+                    <strong>Enquiries</strong>
+                </div>
+
+            </div>
+
+            <div class="topbar-actions">
+
+                <button
+                    type="button"
+                    class="icon-btn"
+                    id="themeToggle"
+                    aria-label="Toggle light and dark theme"
+                    title="Toggle theme"
+                >
+                    ☼
+                </button>
+
+            </div>
+
+        </header>
+
+
+        <!-- PAGE HEADING -->
+        <section class="page-heading">
+
+            <div>
+                <p class="eyebrow">CLIENT MANAGEMENT</p>
+                <h1>Client Enquiries</h1>
+
+                <p>
+                    Manage contact requests and potential client leads.
+                </p>
+            </div>
+
+            <button
+                type="button"
+                class="secondary-btn"
+                id="exportEnquiriesBtn"
+            >
+                <span>⇩</span>
+                Export CSV
+            </button>
+
+        </section>
+
+
+        <!-- STATS -->
+        <section class="enquiry-stats">
+
+            <article class="stat-card">
+
+                <div class="stat-icon purple">✉</div>
+
+                <div class="stat-info">
+                    <p>Total Enquiries</p>
+                    <h2 id="totalEnquiries">0</h2>
+                </div>
+
+            </article>
+
+            <article class="stat-card">
+
+                <div class="stat-icon cyan">◷</div>
+
+                <div class="stat-info">
+                    <p>New Enquiries</p>
+                    <h2 id="newEnquiries">0</h2>
+                </div>
+
+            </article>
+
+            <article class="stat-card">
+
+                <div class="stat-icon green">✓</div>
+
+                <div class="stat-info">
+                    <p>Completed</p>
+                    <h2 id="completedEnquiries">0</h2>
+                </div>
+
+            </article>
+
+        </section>
+
+
+        <!-- ENQUIRIES PANEL -->
+        <section class="panel">
+
+            <div class="panel-header">
+
+                <div>
+                    <h2>All Enquiries</h2>
+
+                    <p>
+                        View and manage your client messages.
+                    </p>
+                </div>
+
+                <span class="record-count" id="recordCount">
+                    0 records
+                </span>
+
+            </div>
+
+
+            <!-- SEARCH AND FILTERS -->
+            <div class="enquiry-toolbar">
+
+                <label class="search-box">
+
+                    <span>⌕</span>
+
+                    <input
+                        type="search"
+                        id="enquirySearch"
+                        placeholder="Search name, email or subject..."
+                        autocomplete="off"
+                    >
+
+                </label>
+
+                <select id="statusFilter" aria-label="Filter by status">
+                    <option value="all">All Statuses</option>
+                    <option value="new">New</option>
+                    <option value="in-progress">In Progress</option>
+                    <option value="completed">Completed</option>
+                    <option value="archived">Archived</option>
+                </select>
+
+                <select id="sortFilter" aria-label="Sort enquiries">
+                    <option value="newest">Newest First</option>
+                    <option value="oldest">Oldest First</option>
+                    <option value="name">Name A–Z</option>
+                </select>
+
+            </div>
+
+
+            <!-- STATUS MESSAGE -->
+            <div
+                class="page-message"
+                id="pageMessage"
+                role="status"
+                aria-live="polite"
+            ></div>
+
+
+            <!-- TABLE -->
+            <div class="table-wrapper">
+
+                <table class="enquiries-table">
+
+                    <thead>
+                        <tr>
+                            <th>CLIENT</th>
+                            <th>SUBJECT</th>
+                            <th>DATE</th>
+                            <th>STATUS</th>
+                            <th>ACTIONS</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="enquiriesTableBody">
+                        <!-- Enquiries will be rendered by JavaScript -->
+                    </tbody>
+
+                </table>
+
+            </div>
+
+
+            <!-- EMPTY STATE -->
+            <div class="empty-state" id="emptyState">
+
+                <div class="empty-icon">✉</div>
+
+                <h3 id="emptyTitle">No enquiries yet</h3>
+
+                <p id="emptyDescription">
+                    Client enquiries will appear here when they are connected
+                    to your website's contact form.
+                </p>
+
+            </div>
+
+
+            <!-- PAGINATION -->
+            <div class="pagination">
+
+                <p id="paginationInfo">
+                    Showing 0 of 0 enquiries
+                </p>
+
+                <div class="pagination-buttons">
+
+                    <button
+                        type="button"
+                        id="previousPageBtn"
+                        aria-label="Previous page"
+                        disabled
+                    >
+                        ←
+                    </button>
+
+                    <span id="currentPage">1</span>
+
+                    <button
+                        type="button"
+                        id="nextPageBtn"
+                        aria-label="Next page"
+                        disabled
+                    >
+                        →
+                    </button>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- FOOTER -->
+        <footer class="admin-footer">
+
+            <p>
+                © <span id="currentYear"></span> KEWADEV.
+                All rights reserved.
+            </p>
+
+            <a href="../index.html">Back to Dashboard</a>
+
+        </footer>
+
+    </main>
+
+
+    <!-- ENQUIRY DETAILS MODAL -->
+    <div
+        class="modal"
+        id="enquiryModal"
+        hidden
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="enquiryModalTitle"
+    >
+
+        <div class="modal-backdrop" data-close-modal></div>
+
+        <div class="modal-content">
+
+            <div class="modal-header">
+
+                <div>
+                    <h2 id="enquiryModalTitle">Enquiry Details</h2>
+                    <p>Review the client's message and update its status.</p>
+                </div>
+
+                <button
+                    type="button"
+                    class="close-btn"
+                    id="closeEnquiryModal"
+                    aria-label="Close enquiry details"
+                >
+                    ×
+                </button>
+
+            </div>
+
+
+            <div class="enquiry-details" id="enquiryDetails">
+
+                <!-- Enquiry details will be rendered by JavaScript -->
+
+            </div>
+
+
+            <form id="enquiryStatusForm">
+
+                <input type="hidden" id="enquiryId">
+
+                <div class="form-group">
+
+                    <label for="enquiryStatus">
+                        Update Status
+                    </label>
+
+                    <select id="enquiryStatus" required>
+
+                        <option value="new">New</option>
+                        <option value="in-progress">In Progress</option>
+                        <option value="completed">Completed</option>
+                        <option value="archived">Archived</option>
+
+                    </select>
+
+                </div>
+
+                <div class="modal-actions">
+
+                    <button
+                        type="button"
+                        class="secondary-btn"
+                        id="cancelEnquiryBtn"
+                    >
+                        Cancel
+                    </button>
+
+                    <button
+                        type="submit"
+                        class="primary-btn"
+                    >
+                        Save Status
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+
+    <!-- JAVASCRIPT -->
+    <script src="js/main.js"></script>
+    <script src="js/enquiries.js"></script>
+
+</body>
+
+</html>
