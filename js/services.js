@@ -4,9 +4,20 @@
 /* =========================================
    KEWADEV ADMIN — SERVICES
    File: js/services.js
+   Backend-connected version
    ========================================= */
 
 document.addEventListener("DOMContentLoaded", function () {
+
+    /* ---------- CONFIGURATION ---------- */
+
+    const API_BASE_URL = "https://backend-port-wr91.onrender.com";
+    const THEME_KEY = "kewadev_admin_theme";
+    const ITEMS_PER_PAGE = 5;
+
+    let currentPage = 1;
+    let services = [];
+    let messageTimeout = null;
 
     /* ---------- ELEMENTS ---------- */
 
@@ -24,130 +35,83 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const serviceRecordCount = document.getElementById("serviceRecordCount");
     const serviceSearch = document.getElementById("serviceSearch");
-    const serviceStatusFilter = document.getElementById("serviceStatusFilter");
-    const serviceSortFilter = document.getElementById("serviceSortFilter");
+    const serviceStatusFilter =
+        document.getElementById("serviceStatusFilter");
+    const serviceSortFilter =
+        document.getElementById("serviceSortFilter");
 
     const servicesTableBody = document.getElementById("servicesTableBody");
 
     const serviceEmptyState = document.getElementById("serviceEmptyState");
     const serviceEmptyTitle = document.getElementById("serviceEmptyTitle");
-    const serviceEmptyDescription = document.getElementById("serviceEmptyDescription");
+    const serviceEmptyDescription =
+        document.getElementById("serviceEmptyDescription");
 
-    const servicePaginationInfo = document.getElementById("servicePaginationInfo");
-    const previousServicePageBtn = document.getElementById("previousServicePageBtn");
-    const currentServicePage = document.getElementById("currentServicePage");
-    const nextServicePageBtn = document.getElementById("nextServicePageBtn");
+    const servicePaginationInfo =
+        document.getElementById("servicePaginationInfo");
+    const previousServicePageBtn =
+        document.getElementById("previousServicePageBtn");
+    const currentServicePage =
+        document.getElementById("currentServicePage");
+    const nextServicePageBtn =
+        document.getElementById("nextServicePageBtn");
 
-    const servicePageMessage = document.getElementById("servicePageMessage");
+    const servicePageMessage =
+        document.getElementById("servicePageMessage");
     const currentYear = document.getElementById("currentYear");
 
     const serviceModal = document.getElementById("serviceModal");
-    const closeServiceModal = document.getElementById("closeServiceModal");
+    const closeServiceModalBtn =
+        document.getElementById("closeServiceModal");
     const serviceForm = document.getElementById("serviceForm");
     const serviceId = document.getElementById("serviceId");
     const serviceName = document.getElementById("serviceName");
     const serviceCategory = document.getElementById("serviceCategory");
     const serviceIcon = document.getElementById("serviceIcon");
-    const serviceDescription = document.getElementById("serviceDescription");
+    const serviceDescription =
+        document.getElementById("serviceDescription");
     const serviceStatus = document.getElementById("serviceStatus");
     const cancelServiceBtn = document.getElementById("cancelServiceBtn");
     const saveServiceBtn = document.getElementById("saveServiceBtn");
 
+    /* ---------- API HELPER ---------- */
 
-    /* ---------- SETTINGS ---------- */
+    async function apiRequest(endpoint, options = {}) {
+        const headers = new Headers(options.headers || {});
 
-    const STORAGE_KEY = "kewadev_admin_services";
-    const THEME_KEY = "kewadev_admin_theme";
-
-    const ITEMS_PER_PAGE = 5;
-
-    let currentPage = 1;
-    let services = [];
-    let messageTimeout;
-
-
-    /* ---------- DEFAULT SERVICES ---------- */
-
-    const defaultServices = [
-        {
-            id: "service-1",
-            name: "Website Development",
-            category: "Development",
-            icon: "💻",
-            description: "Responsive websites for businesses and individuals.",
-            status: "Active",
-            createdAt: Date.now()
-        },
-        {
-            id: "service-2",
-            name: "Landing Page Design",
-            category: "Design",
-            icon: "🎨",
-            description: "Modern landing pages designed to showcase products and services.",
-            status: "Active",
-            createdAt: Date.now() - 1000
-        },
-        {
-            id: "service-3",
-            name: "Web App Development",
-            category: "Development",
-            icon: "⚙️",
-            description: "Interactive web applications for everyday business needs.",
-            status: "Inactive",
-            createdAt: Date.now() - 2000
+        if (
+            options.body &&
+            !(options.body instanceof FormData) &&
+            !headers.has("Content-Type")
+        ) {
+            headers.set("Content-Type", "application/json");
         }
-    ];
 
+        const response = await fetch(API_BASE_URL + endpoint, {
+            ...options,
+            headers,
+            credentials: "include"
+        });
 
-    /* ---------- STORAGE ---------- */
+        const contentType = response.headers.get("content-type") || "";
+        let result = null;
 
-    function loadServices() {
-        try {
-            const savedServices = localStorage.getItem(STORAGE_KEY);
-
-            if (savedServices === null) {
-                services = [...defaultServices];
-                saveServices();
-                return;
-            }
-
-            const parsedServices = JSON.parse(savedServices);
-
-            if (Array.isArray(parsedServices)) {
-                services = parsedServices;
-            } else {
-                services = [...defaultServices];
-                saveServices();
-            }
-
-        } catch (error) {
-            console.error("Unable to load services:", error);
-            services = [...defaultServices];
+        if (contentType.includes("application/json")) {
+            result = await response.json();
+        } else {
+            const text = await response.text();
+            result = text ? { message: text } : null;
         }
-    }
 
-
-    function saveServices() {
-        try {
-            localStorage.setItem(
-                STORAGE_KEY,
-                JSON.stringify(services)
+        if (!response.ok) {
+            throw new Error(
+                result?.message ||
+                "Request failed with status " + response.status
             );
-
-            return true;
-
-        } catch (error) {
-            console.error("Unable to save services:", error);
-
-            showMessage(
-                "Could not save data. Check your browser storage.",
-                "error"
-            );
-
-            return false;
         }
-    }
 
+        return result;
+    }
 
     /* ---------- MESSAGE ---------- */
 
@@ -165,7 +129,6 @@ document.addEventListener("DOMContentLoaded", function () {
         }, 3500);
     }
 
-
     /* ---------- HTML SAFETY ---------- */
 
     function escapeHTML(value) {
@@ -182,6 +145,46 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
+    /* ---------- NORMALIZE SERVICE ---------- */
+
+    function normalizeService(item) {
+        const rawStatus = String(item.status || "Active").toLowerCase();
+
+        return {
+            id: String(item.id ?? item._id ?? ""),
+            name: String(item.name || ""),
+            category: String(item.category || "General"),
+            icon: String(item.icon || "🛠️"),
+            description: String(item.description || ""),
+            status: rawStatus === "inactive" ? "Inactive" : "Active",
+            createdAt: item.createdAt || Date.now(),
+            updatedAt: item.updatedAt || item.createdAt || Date.now()
+        };
+    }
+
+    /* ---------- LOAD SERVICES FROM BACKEND ---------- */
+
+    async function loadServices() {
+        const result = await apiRequest("/api/services", {
+            method: "GET"
+        });
+
+        let list;
+
+        if (Array.isArray(result)) {
+            list = result;
+        } else if (Array.isArray(result?.services)) {
+            list = result.services;
+        } else if (Array.isArray(result?.data)) {
+            list = result.data;
+        } else {
+            throw new Error(
+                "Backend response mein services array nahi mila."
+            );
+        }
+
+        services = list.map(normalizeService);
+    }
 
     /* ---------- STATISTICS ---------- */
 
@@ -207,8 +210,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
-
-    /* ---------- FILTER + SORT ---------- */
+    /* ---------- FILTER AND SORT ---------- */
 
     function getFilteredServices() {
         let filtered = [...services];
@@ -228,34 +230,32 @@ document.addEventListener("DOMContentLoaded", function () {
         if (searchText) {
             filtered = filtered.filter(function (service) {
                 return (
-                    String(service.name || "").toLowerCase().includes(searchText) ||
-                    String(service.category || "").toLowerCase().includes(searchText) ||
-                    String(service.description || "").toLowerCase().includes(searchText)
+                    service.name.toLowerCase().includes(searchText) ||
+                    service.category.toLowerCase().includes(searchText) ||
+                    service.description.toLowerCase().includes(searchText)
                 );
             });
         }
 
         if (selectedStatus && selectedStatus !== "all") {
             filtered = filtered.filter(function (service) {
-                return service.status.toLowerCase() === selectedStatus.toLowerCase();
+                return service.status.toLowerCase() ===
+                    selectedStatus.toLowerCase();
             });
         }
 
         if (selectedSort === "newest") {
             filtered.sort(function (a, b) {
-                return (b.createdAt || 0) - (a.createdAt || 0);
+                return new Date(b.createdAt) - new Date(a.createdAt);
             });
-
         } else if (selectedSort === "oldest") {
             filtered.sort(function (a, b) {
-                return (a.createdAt || 0) - (b.createdAt || 0);
+                return new Date(a.createdAt) - new Date(b.createdAt);
             });
-
         } else if (selectedSort === "name-asc") {
             filtered.sort(function (a, b) {
                 return a.name.localeCompare(b.name);
             });
-
         } else if (selectedSort === "name-desc") {
             filtered.sort(function (a, b) {
                 return b.name.localeCompare(a.name);
@@ -264,7 +264,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
         return filtered;
     }
-
 
     /* ---------- RENDER SERVICES ---------- */
 
@@ -304,19 +303,16 @@ document.addEventListener("DOMContentLoaded", function () {
             }
 
             if (serviceEmptyTitle) {
-                serviceEmptyTitle.textContent =
-                    services.length === 0
-                        ? "No services added yet"
-                        : "No matching services found";
+                serviceEmptyTitle.textContent = services.length === 0
+                    ? "No services added yet"
+                    : "No matching services found";
             }
 
             if (serviceEmptyDescription) {
-                serviceEmptyDescription.textContent =
-                    services.length === 0
-                        ? "Add your first service to get started."
-                        : "Try changing your search or filter.";
+                serviceEmptyDescription.textContent = services.length === 0
+                    ? "Add your first service to get started."
+                    : "Try changing your search or filter.";
             }
-
         } else {
             if (serviceEmptyState) {
                 serviceEmptyState.hidden = true;
@@ -332,17 +328,16 @@ document.addEventListener("DOMContentLoaded", function () {
                     <td>
                         <div class="service-name-cell">
                             <span class="service-icon">
-                                ${escapeHTML(service.icon || "🛠️")}
+                                ${escapeHTML(service.icon)}
                             </span>
-
                             <div>
                                 <strong>${escapeHTML(service.name)}</strong>
-                                <small>${escapeHTML(service.description || "")}</small>
+                                <small>${escapeHTML(service.description)}</small>
                             </div>
                         </div>
                     </td>
 
-                    <td>${escapeHTML(service.category || "General")}</td>
+                    <td>${escapeHTML(service.category)}</td>
 
                     <td>
                         <span class="status-badge ${statusClass}">
@@ -376,17 +371,14 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         if (servicePaginationInfo) {
-            if (filteredServices.length === 0) {
-                servicePaginationInfo.textContent = "Showing 0 services";
-            } else {
-                servicePaginationInfo.textContent =
-                    "Showing " +
-                    (startIndex + 1) +
-                    "–" +
-                    Math.min(startIndex + ITEMS_PER_PAGE, filteredServices.length) +
-                    " of " +
-                    filteredServices.length;
-            }
+            servicePaginationInfo.textContent =
+                filteredServices.length === 0
+                    ? "Showing 0 services"
+                    : "Showing " + (startIndex + 1) + "–" +
+                      Math.min(
+                          startIndex + ITEMS_PER_PAGE,
+                          filteredServices.length
+                      ) + " of " + filteredServices.length;
         }
 
         if (currentServicePage) {
@@ -402,40 +394,33 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
+    /* ---------- PART 1 ENDS HERE ---------- */
 
-    /* ---------- OPEN MODAL ---------- */
+    /* ---------- OPEN SERVICE MODAL ---------- */
 
     function openModal(service = null) {
         if (!serviceModal || !serviceForm) return;
 
         serviceForm.reset();
 
-        if (serviceId) {
-            serviceId.value = service ? service.id : "";
-        }
-
-        if (serviceName) {
-            serviceName.value = service ? service.name : "";
-        }
-
+        if (serviceId) serviceId.value = service ? service.id : "";
+        if (serviceName) serviceName.value = service ? service.name : "";
         if (serviceCategory) {
             serviceCategory.value = service ? service.category : "";
         }
-
         if (serviceIcon) {
             serviceIcon.value = service ? service.icon : "🛠️";
         }
-
         if (serviceDescription) {
             serviceDescription.value = service ? service.description : "";
         }
-
         if (serviceStatus) {
             serviceStatus.value = service ? service.status : "Active";
         }
 
         serviceModal.hidden = false;
         serviceModal.classList.add("active");
+        serviceModal.setAttribute("aria-hidden", "false");
         document.body.classList.add("modal-open");
 
         if (saveServiceBtn) {
@@ -444,24 +429,23 @@ document.addEventListener("DOMContentLoaded", function () {
                 : "Save Service";
         }
 
-        if (serviceName) {
-            serviceName.focus();
-        }
+        serviceName?.focus();
     }
 
-
-    /* ---------- CLOSE MODAL ---------- */
+    /* ---------- CLOSE SERVICE MODAL ---------- */
 
     function closeModal() {
         if (!serviceModal) return;
 
         serviceModal.classList.remove("active");
         serviceModal.hidden = true;
+        serviceModal.setAttribute("aria-hidden", "true");
         document.body.classList.remove("modal-open");
+
+        serviceForm?.reset();
     }
 
-
-    /* ---------- ADD / EDIT SERVICE ---------- */
+    /* ---------- ADD SERVICE BUTTONS ---------- */
 
     if (addServiceBtn) {
         addServiceBtn.addEventListener("click", function () {
@@ -475,8 +459,8 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    if (closeServiceModal) {
-        closeServiceModal.addEventListener("click", closeModal);
+    if (closeServiceModalBtn) {
+        closeServiceModalBtn.addEventListener("click", closeModal);
     }
 
     if (cancelServiceBtn) {
@@ -492,66 +476,31 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     document.addEventListener("keydown", function (event) {
-        if (event.key === "Escape" && serviceModal &&
-            !serviceModal.hidden) {
+        if (
+            event.key === "Escape" &&
+            serviceModal &&
+            !serviceModal.hidden
+        ) {
             closeModal();
         }
     });
 
-
-    /* ---------- SAVE FORM ---------- */
+    /* ---------- SAVE / UPDATE SERVICE ---------- */
 
     if (serviceForm) {
-        serviceForm.addEventListener("submit", function (event) {
+        serviceForm.addEventListener("submit", async function (event) {
             event.preventDefault();
 
-            const name = serviceName
-                ? serviceName.value.trim()
-                : "";
-
-            const category = serviceCategory
-                ? serviceCategory.value.trim()
-                : "General";
-
-            const icon = serviceIcon
-                ? serviceIcon.value.trim()
-                : "🛠️";
-
-            const description = serviceDescription
-                ? serviceDescription.value.trim()
-                : "";
-
-            const status = serviceStatus
-                ? serviceStatus.value
-                : "Active";
-
-            const editingId = serviceId
-                ? serviceId.value
-                : "";
+            const name = serviceName?.value.trim() || "";
+            const category = serviceCategory?.value.trim() || "General";
+            const icon = serviceIcon?.value.trim() || "🛠️";
+            const description = serviceDescription?.value.trim() || "";
+            const status = serviceStatus?.value || "Active";
+            const editingId = serviceId?.value.trim() || "";
 
             if (!name) {
                 showMessage("Please enter a service name.", "error");
-
-                if (serviceName) serviceName.focus();
-
-                return;
-            }
-
-            const duplicate = services.some(function (service) {
-                return (
-                    service.name.toLowerCase() === name.toLowerCase() &&
-                    service.id !== editingId
-                );
-            });
-
-            if (duplicate) {
-                showMessage(
-                    "A service with this name already exists.",
-                    "error"
-                );
-
-                if (serviceName) serviceName.focus();
-
+                serviceName?.focus();
                 return;
             }
 
@@ -560,67 +509,87 @@ document.addEventListener("DOMContentLoaded", function () {
                 return;
             }
 
-            if (editingId) {
-                const index = services.findIndex(function (service) {
-                    return service.id === editingId;
-                });
+            const duplicate = services.some(function (service) {
+                return (
+                    service.name.toLowerCase() === name.toLowerCase() &&
+                    String(service.id) !== editingId
+                );
+            });
 
-                if (index === -1) {
-                    showMessage("Service not found.", "error");
-                    return;
-                }
+            if (duplicate) {
+                showMessage(
+                    "A service with this name already exists.",
+                    "error"
+                );
+                serviceName?.focus();
+                return;
+            }
 
-                const updatedService = {
-                    ...services[index],
-                    name: name,
-                    category: category || "General",
-                    icon: icon || "🛠️",
-                    description: description,
-                    status: status
-                };
+            const payload = {
+                name,
+                category,
+                icon,
+                description,
+                status
+            };
 
-                services[index] = updatedService;
+            const oldButtonText = saveServiceBtn
+                ? saveServiceBtn.textContent
+                : "Save Service";
 
-                if (!saveServices()) return;
+            if (saveServiceBtn) {
+                saveServiceBtn.disabled = true;
+                saveServiceBtn.textContent = editingId
+                    ? "Updating..."
+                    : "Saving...";
+            }
 
-                closeModal();
-                renderServices();
-                showMessage("Service updated successfully.");
+            try {
+                const result = await apiRequest(
+                    editingId
+                        ? "/api/services/" + encodeURIComponent(editingId)
+                        : "/api/services",
+                    {
+                        method: editingId ? "PUT" : "POST",
+                        body: JSON.stringify(payload)
+                    }
+                );
 
-            } else {
-                const newService = {
-                    id: "service-" + Date.now() + "-" +
-                        Math.random().toString(36).slice(2, 7),
-                    name: name,
-                    category: category || "General",
-                    icon: icon || "🛠️",
-                    description: description,
-                    status: status,
-                    createdAt: Date.now()
-                };
-
-                services.unshift(newService);
-
-                if (!saveServices()) {
-                    services.shift();
-                    return;
-                }
+                await loadServices();
 
                 currentPage = 1;
-
-                closeModal();
                 renderServices();
-                showMessage("New service added successfully.");
+                closeModal();
+
+                showMessage(
+                    result?.message ||
+                    (
+                        editingId
+                            ? "Service updated successfully."
+                            : "Service added successfully."
+                    ),
+                    "success"
+                );
+            } catch (error) {
+                console.error("Save service error:", error);
+
+                showMessage(
+                    error.message || "Could not save service.",
+                    "error"
+                );
+            } finally {
+                if (saveServiceBtn) {
+                    saveServiceBtn.disabled = false;
+                    saveServiceBtn.textContent = oldButtonText;
+                }
             }
         });
     }
 
-
-   
-    /* ---------- EDIT / DELETE BUTTONS ---------- */
+    /* ---------- EDIT / DELETE ACTIONS ---------- */
 
     if (servicesTableBody) {
-        servicesTableBody.addEventListener("click", function (event) {
+        servicesTableBody.addEventListener("click", async function (event) {
             const button = event.target.closest("button[data-action]");
 
             if (!button) return;
@@ -629,16 +598,17 @@ document.addEventListener("DOMContentLoaded", function () {
             const id = button.dataset.id;
 
             const service = services.find(function (item) {
-                return item.id === id;
+                return String(item.id) === String(id);
             });
 
             if (!service) {
-                showMessage("Service not found.", "error");
+                showMessage("Service not found. Refresh and try again.", "error");
                 return;
             }
 
             if (action === "edit") {
                 openModal(service);
+                return;
             }
 
             if (action === "delete") {
@@ -650,23 +620,39 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 if (!confirmed) return;
 
-                const previousServices = [...services];
+                const oldButtonText = button.textContent;
+                button.disabled = true;
+                button.textContent = "Deleting...";
 
-                services = services.filter(function (item) {
-                    return item.id !== id;
-                });
+                try {
+                    const result = await apiRequest(
+                        "/api/services/" + encodeURIComponent(id),
+                        {
+                            method: "DELETE"
+                        }
+                    );
 
-                if (!saveServices()) {
-                    services = previousServices;
-                    return;
+                    await loadServices();
+                    renderServices();
+
+                    showMessage(
+                        result?.message || "Service deleted successfully.",
+                        "success"
+                    );
+                } catch (error) {
+                    console.error("Delete service error:", error);
+
+                    showMessage(
+                        error.message || "Could not delete service.",
+                        "error"
+                    );
+
+                    button.disabled = false;
+                    button.textContent = oldButtonText;
                 }
-
-                renderServices();
-                showMessage("Service deleted successfully.");
             }
         });
     }
-
 
     /* ---------- SEARCH ---------- */
 
@@ -677,7 +663,6 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-
     /* ---------- STATUS FILTER ---------- */
 
     if (serviceStatusFilter) {
@@ -687,8 +672,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-
-    /* ---------- SORT ---------- */
+    /* ---------- SORT FILTER ---------- */
 
     if (serviceSortFilter) {
         serviceSortFilter.addEventListener("change", function () {
@@ -696,7 +680,6 @@ document.addEventListener("DOMContentLoaded", function () {
             renderServices();
         });
     }
-
 
     /* ---------- PAGINATION ---------- */
 
@@ -725,87 +708,123 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-
-    /* ---------- MOBILE SIDEBAR ---------- */
-
-    let sidebarOverlay = document.querySelector(".sidebar-overlay");
-
-    if (!sidebarOverlay) {
-        sidebarOverlay = document.createElement("div");
-        sidebarOverlay.className = "sidebar-overlay";
-        document.body.appendChild(sidebarOverlay);
-    }
-
-    function closeSidebar() {
-        if (sidebar) {
-            sidebar.classList.remove("open");
-        }
-
-        sidebarOverlay.classList.remove("active");
-        document.body.classList.remove("sidebar-open");
-    }
-
-    if (menuBtn) {
-        menuBtn.addEventListener("click", function () {
-            if (!sidebar) return;
-
-            sidebar.classList.toggle("open");
-            sidebarOverlay.classList.toggle("active");
-
-            document.body.classList.toggle(
-                "sidebar-open",
-                sidebar.classList.contains("open")
-            );
-        });
-    }
-
-    sidebarOverlay.addEventListener("click", closeSidebar);
-
-
     /* ---------- THEME ---------- */
 
-    function applyTheme() {
-        const savedTheme = localStorage.getItem(THEME_KEY);
+    function applyTheme(theme) {
+        const isLight = theme === "light";
 
-        document.body.classList.toggle(
-            "light-theme",
-            savedTheme === "light"
-        );
+        document.body.classList.toggle("light-theme", isLight);
+        document.documentElement.setAttribute("data-theme", theme);
+
+        if (themeToggle) {
+            themeToggle.textContent = isLight ? "☾" : "☼";
+            themeToggle.setAttribute(
+                "aria-label",
+                isLight ? "Switch to dark theme" : "Switch to light theme"
+            );
+        }
+    }
+
+    function loadTheme() {
+        let theme = "dark";
+
+        try {
+            theme = localStorage.getItem(THEME_KEY) || "dark";
+        } catch (error) {
+            console.warn("Could not load theme preference:", error);
+        }
+
+        applyTheme(theme);
     }
 
     if (themeToggle) {
         themeToggle.addEventListener("click", function () {
-            const isLight =
-                document.body.classList.contains("light-theme");
+            const currentTheme =
+                document.body.classList.contains("light-theme")
+                    ? "light"
+                    : "dark";
 
-            document.body.classList.toggle("light-theme", !isLight);
+            const newTheme =
+                currentTheme === "light" ? "dark" : "light";
+
+            applyTheme(newTheme);
 
             try {
-                localStorage.setItem(
-                    THEME_KEY,
-                    isLight ? "dark" : "light"
-                );
+                localStorage.setItem(THEME_KEY, newTheme);
             } catch (error) {
-                console.error("Unable to save theme:", error);
+                console.warn("Could not save theme preference:", error);
             }
         });
     }
 
+    /* ---------- MOBILE SIDEBAR ---------- */
+
+    function closeSidebar() {
+        sidebar?.classList.remove("open");
+
+        const overlay = document.querySelector(".sidebar-overlay");
+
+        if (overlay) {
+            overlay.classList.remove("active");
+        }
+    }
+
+    function openSidebar() {
+        if (!sidebar) return;
+
+        let overlay = document.querySelector(".sidebar-overlay");
+
+        if (!overlay) {
+            overlay = document.createElement("div");
+            overlay.className = "sidebar-overlay";
+            overlay.addEventListener("click", closeSidebar);
+            document.body.appendChild(overlay);
+        }
+
+        sidebar.classList.add("open");
+        overlay.classList.add("active");
+    }
+
+    if (menuBtn) {
+        menuBtn.addEventListener("click", function () {
+            if (sidebar?.classList.contains("open")) {
+                closeSidebar();
+            } else {
+                openSidebar();
+            }
+        });
+    }
+
+    window.addEventListener("resize", function () {
+        if (window.innerWidth > 850) {
+            closeSidebar();
+        }
+    });
 
     /* ---------- LOGOUT ---------- */
 
     if (logoutBtn) {
-        logoutBtn.addEventListener("click", function () {
+        logoutBtn.addEventListener("click", async function (event) {
+            event.preventDefault();
+
             const confirmed = window.confirm(
-                "Are you sure you want to log out?"
+                "Kya tum logout karna chahte ho?"
             );
 
-            if (confirmed) {
-                window.location.href = "../login.html";
+            if (!confirmed) return;
+
+            try {
+                await apiRequest("/api/auth/logout", {
+                    method: "POST",
+                    body: JSON.stringify({})
+                });
+            } catch (error) {
+                console.error("Logout error:", error);
             }
+
+            window.location.href = "../login.html";
         });
     }
-
 
     /* ---------- FOOTER YEAR ---------- */
 
@@ -813,14 +832,26 @@ document.addEventListener("DOMContentLoaded", function () {
         currentYear.textContent = new Date().getFullYear();
     }
 
-
     /* ---------- INITIALIZE ---------- */
 
-    applyTheme();
-    loadServices();
-    renderServices();
+    async function initializeServices() {
+        loadTheme();
 
-    console.log("KEWADEV Services JS loaded successfully.");
+        try {
+            await loadServices();
+            renderServices();
+        } catch (error) {
+            console.error("Load services error:", error);
+
+            showMessage(
+                "Services load nahi hui. Backend server aur API route check karo.",
+                "error"
+            );
+        }
+
+        console.log("KEWADEV Services JS loaded.");
+    }
+
+    initializeServices();
 
 });
-                    

@@ -1,11 +1,10 @@
-
 "use strict";
 
 document.addEventListener("DOMContentLoaded", function () {
 
-    // ================= STORAGE =================
+    // ================= CONFIGURATION =================
 
-    const STORAGE_KEY = "kewadev_admin_settings";
+    const API_BASE_URL = "https://backend-port-wr91.onrender.com";
     const THEME_KEY = "kewadev_admin_theme";
     const LANGUAGE_KEY = "kewadev_admin_language";
 
@@ -42,7 +41,8 @@ document.addEventListener("DOMContentLoaded", function () {
     const logoutButton = document.getElementById("logoutButton");
     const currentYear = document.getElementById("currentYear");
 
-    let messageTimer;
+    let messageTimer = null;
+    let isSaving = false;
 
     // ================= DEFAULT SETTINGS =================
 
@@ -63,55 +63,56 @@ document.addEventListener("DOMContentLoaded", function () {
         apiBaseUrl: ""
     };
 
-    // ================= SAFE STORAGE =================
+    // ================= API REQUEST =================
 
-    function readSettings() {
-        try {
-            const saved = localStorage.getItem(STORAGE_KEY);
+    async function apiRequest(endpoint, options = {}) {
+        const headers = new Headers(options.headers || {});
 
-            if (!saved) {
-                return { ...defaultSettings };
-            }
-
-            const parsed = JSON.parse(saved);
-
-            if (
-                !parsed ||
-                typeof parsed !== "object" ||
-                Array.isArray(parsed)
-            ) {
-                return { ...defaultSettings };
-            }
-
-            return {
-                ...defaultSettings,
-                ...parsed
-            };
-
-        } catch (error) {
-            console.error("Could not load settings:", error);
-            return { ...defaultSettings };
+        if (
+            options.body &&
+            !(options.body instanceof FormData) &&
+            !headers.has("Content-Type")
+        ) {
+            headers.set("Content-Type", "application/json");
         }
-    }
 
-    function writeSettings(settings) {
-        try {
-            localStorage.setItem(
-                STORAGE_KEY,
-                JSON.stringify(settings)
-            );
+        const response = await fetch(
+            `${API_BASE_URL}${endpoint}`,
+            {
+                ...options,
+                headers,
+                credentials: "include"
+            }
+        );
 
-            return true;
+        const contentType =
+            response.headers.get("content-type") || "";
 
-        } catch (error) {
-            console.error("Could not save settings:", error);
-            return false;
+        let result = null;
+
+        if (contentType.includes("application/json")) {
+            result = await response.json();
+        } else {
+            result = await response.text();
         }
+
+        if (!response.ok) {
+            const message =
+                result &&
+                typeof result === "object" &&
+                result.message
+                    ? result.message
+                    : `Request failed: HTTP ${response.status}`;
+
+            throw new Error(message);
+        }
+
+        return result;
     }
 
     // ================= MESSAGE =================
 
-    function showMessage(message, type) {
+    function showMessage(message, type = "success") {
         if (!settingsMessage) return;
 
         clearTimeout(messageTimer);
@@ -123,6 +124,7 @@ document.addEventListener("DOMContentLoaded", function () {
         messageTimer = setTimeout(function () {
             settingsMessage.textContent = "";
             settingsMessage.className = "settings-message";
+            settingsMessage.hidden = true;
         }, 4000);
     }
 
@@ -150,20 +152,20 @@ document.addEventListener("DOMContentLoaded", function () {
     // ================= FILL FORM =================
 
     function fillForm(settings) {
-        businessName.value = settings.businessName;
-        businessEmail.value = settings.businessEmail;
-        businessWebsite.value = settings.businessWebsite;
-        businessCurrency.value = settings.businessCurrency;
-        businessDescription.value = settings.businessDescription;
+        businessName.value = settings.businessName ?? "";
+        businessEmail.value = settings.businessEmail ?? "";
+        businessWebsite.value = settings.businessWebsite ?? "";
+        businessCurrency.value = settings.businessCurrency ?? "INR";
+        businessDescription.value = settings.businessDescription ?? "";
 
-        notifyEnquiries.checked = settings.notifyEnquiries;
-        notifyProjects.checked = settings.notifyProjects;
-        notifyServices.checked = settings.notifyServices;
+        notifyEnquiries.checked = settings.notifyEnquiries ?? true;
+        notifyProjects.checked = settings.notifyProjects ?? true;
+        notifyServices.checked = settings.notifyServices ?? false;
 
-        themePreference.value = settings.themePreference;
-        languagePreference.value = settings.languagePreference;
+        themePreference.value = settings.themePreference ?? "dark";
+        languagePreference.value = settings.languagePreference ?? "en";
 
-        apiBaseUrl.value = settings.apiBaseUrl;
+        apiBaseUrl.value = settings.apiBaseUrl ?? "";
     }
 
     // ================= URL VALIDATION =================
@@ -178,13 +180,12 @@ document.addEventListener("DOMContentLoaded", function () {
                 parsed.protocol === "https:" ||
                 parsed.protocol === "http:"
             );
-
         } catch (error) {
             return false;
         }
     }
 
-    // ================= APPLY THEME =================
+    // ================= THEME =================
 
     function applyTheme(theme) {
         let selectedTheme = theme;
@@ -207,18 +208,72 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
-    // ================= THEME PREFERENCE CHANGE =================
+    // ================= LANGUAGE PREFERENCE =================
 
-    themePreference.addEventListener("change", function () {
-        applyTheme(themePreference.value);
-    });
-
-    // ================= SAVE SETTINGS =================
-
-    function saveSettings() {
-        if (!settingsForm.reportValidity()) {
-            return;
+    function saveLanguagePreference(language) {
+        try {
+            localStorage.setItem(LANGUAGE_KEY, language);
+        } catch (error) {
+            console.warn("Could not save language preference.", error);
         }
+    }
+
+    // ================= LOAD SETTINGS FROM BACKEND =================
+
+    async function loadSettings() {
+        try {
+            const result = await apiRequest("/api/settings", {
+                method: "GET"
+            });
+
+            const settings =
+                result &&
+                typeof result === "object" &&
+                !Array.isArray(result)
+                    ? (result.settings || result.data || result)
+                    : null;
+
+            if (!settings || typeof settings !== "object") {
+                throw new Error("Invalid settings response from backend.");
+            }
+
+            fillForm({
+                ...defaultSettings,
+                ...settings
+            });
+
+            applyTheme(themePreference.value);
+            saveLanguagePreference(languagePreference.value);
+
+            updateConnectionStatus(
+                "Settings loaded successfully from backend.",
+                "connected"
+            );
+
+        } catch (error) {
+            console.error("Could not load settings:", error);
+
+            fillForm({ ...defaultSettings });
+            applyTheme(defaultSettings.themePreference);
+
+            updateConnectionStatus(
+                "Could not load settings. Check backend and API routes.",
+                "disconnected"
+            );
+
+            showMessage(
+                "Settings load nahi hui. Backend connection aur /api/settings route check karo.",
+                "error"
+            );
+        }
+    }
+
+    // ================= SAVE SETTINGS TO BACKEND =================
+
+    async function saveSettings() {
+        if (isSaving) return;
+
+        if (!settingsForm.reportValidity()) return;
 
         const settings = collectSettings();
 
@@ -232,66 +287,92 @@ document.addEventListener("DOMContentLoaded", function () {
             !isValidOptionalURL(settings.businessWebsite) ||
             !isValidOptionalURL(settings.apiBaseUrl)
         ) {
-            showMessage("Please enter valid website and API URLs.", "error");
-            return;
-        }
-
-        if (!writeSettings(settings)) {
             showMessage(
-                "Settings could not be saved. Check browser storage.",
+                "Please enter valid website and API URLs.",
                 "error"
             );
             return;
         }
 
-        applyTheme(settings.themePreference);
+        isSaving = true;
 
-        try {
-            localStorage.setItem(
-                LANGUAGE_KEY,
-                settings.languagePreference
-            );
-        } catch (error) {
-            console.warn("Could not save language preference.", error);
+        if (saveAllSettingsButton) {
+            saveAllSettingsButton.disabled = true;
         }
 
-        showMessage("Settings saved successfully.", "success");
+        try {
+            await apiRequest("/api/settings", {
+                method: "PUT",
+                body: JSON.stringify(settings)
+            });
+
+            applyTheme(settings.themePreference);
+            saveLanguagePreference(settings.languagePreference);
+
+            showMessage("Settings saved successfully.", "success");
+
+        } catch (error) {
+            console.error("Could not save settings:", error);
+
+            showMessage(
+                error.message || "Could not save settings to backend.",
+                "error"
+            );
+
+        } finally {
+            isSaving = false;
+
+            if (saveAllSettingsButton) {
+                saveAllSettingsButton.disabled = false;
+            }
+        }
     }
 
-    settingsForm.addEventListener("submit", function (event) {
-        event.preventDefault();
-        saveSettings();
-    });
+    // ================= FORM EVENTS =================
 
-    saveAllSettingsButton.addEventListener("click", function () {
-        saveSettings();
-    });
+    if (settingsForm) {
+        settingsForm.addEventListener("submit", function (event) {
+            event.preventDefault();
+            saveSettings();
+        });
+    }
 
-    /* PART 1 ENDS HERE */
+    // ================= THEME PREFERENCE CHANGE =================
 
-// ================= RESET FORM =================
+    if (themePreference) {
+        themePreference.addEventListener("change", function () {
+            applyTheme(themePreference.value);
+        });
+    }
 
-    resetSettingsButton.addEventListener("click", function () {
-        const confirmed = window.confirm(
-            "Reset the form to default settings? Saved settings will not be changed until you click Save."
-        );
+    /* ========== PART 1 ENDS HERE ========== */
+      // ================= RESET FORM =================
 
-        if (!confirmed) return;
+    if (resetSettingsButton) {
+        resetSettingsButton.addEventListener("click", function () {
+            const confirmed = window.confirm(
+                "Reset the form to default settings? Changes will not be saved until you click Save Settings."
+            );
 
-        fillForm({ ...defaultSettings });
-        applyTheme(defaultSettings.themePreference);
+            if (!confirmed) return;
 
-        showMessage(
-            "Form reset. Click Save Settings to save these defaults.",
-            "success"
-        );
-    });
+            fillForm({ ...defaultSettings });
+            applyTheme(defaultSettings.themePreference);
 
+            showMessage(
+                "Form reset. Click Save Settings to save these defaults.",
+                "success"
+            );
+        });
+    }
 
     // ================= API CONNECTION STATUS =================
 
-    function updateConnectionStatus(message, type) {
+    function updateConnectionStatus(message, type = "") {
+        if (!connectionStatus) return;
+
         connectionStatus.textContent = message;
+
         connectionStatus.classList.remove(
             "connected",
             "disconnected",
@@ -308,7 +389,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         if (!baseURL) {
             updateConnectionStatus(
-                "No backend URL configured. The admin panel is using browser storage.",
+                "Enter your backend URL first.",
                 "disconnected"
             );
             return;
@@ -323,39 +404,31 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         updateConnectionStatus(
-            "Backend URL entered. Checking connection...",
+            "Checking backend connection...",
             "checking"
         );
 
+        const controller = new AbortController();
+
+        const timeoutId = setTimeout(function () {
+            controller.abort();
+        }, 8000);
+
         try {
-            const controller = new AbortController();
-
-            const timeoutId = setTimeout(function () {
-                controller.abort();
-            }, 8000);
-
-            let response;
-
-            try {
-                response = await fetch(baseURL, {
-                    method: "GET",
-                    signal: controller.signal,
-                    mode: "cors"
-                });
-            } finally {
-                clearTimeout(timeoutId);
-            }
+            const response = await fetch(baseURL, {
+                method: "GET",
+                mode: "cors",
+                signal: controller.signal
+            });
 
             if (response.ok) {
                 updateConnectionStatus(
-                    "Backend responded successfully. This does not verify authentication or every API endpoint.",
+                    "Backend responded. Individual API routes and authentication are not yet verified.",
                     "connected"
                 );
             } else {
                 updateConnectionStatus(
-                    "The server responded with HTTP " +
-                    response.status +
-                    ". Check the backend URL and endpoint.",
+                    `Server responded with HTTP ${response.status}. Check the URL or endpoint.`,
                     "disconnected"
                 );
             }
@@ -364,41 +437,41 @@ document.addEventListener("DOMContentLoaded", function () {
             console.error("API connection check failed:", error);
 
             updateConnectionStatus(
-                "Connection could not be verified. Check the URL, CORS settings, server status, and internet connection.",
+                "Connection failed. Check URL, CORS, and server status.",
                 "disconnected"
             );
+
+        } finally {
+            clearTimeout(timeoutId);
         }
     }
 
-    apiBaseUrl.addEventListener("change", function () {
-        if (!apiBaseUrl.value.trim()) {
+    if (apiBaseUrl) {
+        apiBaseUrl.addEventListener("change", function () {
             updateConnectionStatus(
-                "Backend connection has not been verified.",
+                apiBaseUrl.value.trim()
+                    ? "URL entered. Tap here to check the connection."
+                    : "Backend URL has not been configured.",
                 ""
             );
-            return;
-        }
+        });
+    }
 
-        updateConnectionStatus(
-            "URL entered. Save settings, then check the connection.",
-            ""
-        );
-    });
-
-    // Check connection only when this button is clicked.
-    // This avoids unnecessary requests to an unconfigured backend.
+    // Tap/click connection information to test the URL.
     const connectionInfo = document.querySelector(".connection-info");
 
     if (connectionInfo) {
         connectionInfo.style.cursor = "pointer";
+
         connectionInfo.setAttribute(
             "title",
             "Tap to check the backend connection"
         );
 
-        connectionInfo.addEventListener("click", checkAPIConnection);
         connectionInfo.setAttribute("role", "button");
         connectionInfo.setAttribute("tabindex", "0");
+
+        connectionInfo.addEventListener("click", checkAPIConnection);
 
         connectionInfo.addEventListener("keydown", function (event) {
             if (event.key === "Enter" || event.key === " ") {
@@ -408,30 +481,29 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-
     // ================= HEADER THEME BUTTON =================
 
-    themeToggle.addEventListener("click", function () {
-        const isCurrentlyLight =
-            document.body.classList.contains("light-theme");
+    if (themeToggle) {
+        themeToggle.addEventListener("click", function () {
+            const isCurrentlyLight =
+                document.body.classList.contains("light-theme");
 
-        const nextTheme = isCurrentlyLight ? "dark" : "light";
+            const nextTheme = isCurrentlyLight ? "dark" : "light";
 
-        themePreference.value = nextTheme;
-        applyTheme(nextTheme);
+            if (themePreference) {
+                themePreference.value = nextTheme;
+            }
 
-        const settings = collectSettings();
+            applyTheme(nextTheme);
 
-        if (writeSettings(settings)) {
-            showMessage("Theme preference saved.", "success");
-        } else {
+            // Save theme locally immediately.
+            // Backend settings are saved when Save Settings is clicked.
             showMessage(
-                "Theme changed, but the preference could not be saved.",
-                "error"
+                "Theme changed. Click Save Settings to save all settings to the backend.",
+                "success"
             );
-        }
-    });
-
+        });
+    }
 
     // ================= MOBILE SIDEBAR =================
 
@@ -453,15 +525,18 @@ document.addEventListener("DOMContentLoaded", function () {
 
         adminSidebar.classList.toggle("open", shouldOpen);
         sidebarOverlay.classList.toggle("active", shouldOpen);
+
         menuToggle.setAttribute(
             "aria-expanded",
             String(shouldOpen)
         );
     }
 
-    menuToggle.addEventListener("click", function () {
-        toggleSidebar();
-    });
+    if (menuToggle) {
+        menuToggle.addEventListener("click", function () {
+            toggleSidebar();
+        });
+    }
 
     sidebarOverlay.addEventListener("click", function () {
         toggleSidebar(false);
@@ -481,26 +556,38 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 
-
     // ================= LOGOUT =================
 
-    logoutButton.addEventListener("click", function () {
-        const confirmed = window.confirm(
-            "Are you sure you want to leave the admin panel?"
-        );
+    if (logoutButton) {
+        logoutButton.addEventListener("click", async function () {
+            const confirmed = window.confirm(
+                "Are you sure you want to log out?"
+            );
 
-        if (confirmed) {
-            window.location.href = "login.html";
-        }
-    });
+            if (!confirmed) return;
 
+            logoutButton.disabled = true;
+
+            try {
+                await apiRequest("/api/auth/logout", {
+                    method: "POST",
+                    body: JSON.stringify({})
+                });
+
+            } catch (error) {
+                console.error("Logout request failed:", error);
+            } finally {
+                // Redirect even if the logout endpoint is unavailable.
+                window.location.href = "../login.html";
+            }
+        });
+    }
 
     // ================= FOOTER YEAR =================
 
     if (currentYear) {
         currentYear.textContent = new Date().getFullYear();
     }
-
 
     // ================= SYSTEM THEME UPDATES =================
 
@@ -509,29 +596,20 @@ document.addEventListener("DOMContentLoaded", function () {
     );
 
     systemThemeQuery.addEventListener("change", function () {
-        if (themePreference.value === "system") {
+        if (themePreference && themePreference.value === "system") {
             applyTheme("system");
         }
     });
 
+    // ================= INITIALIZE =================
 
-    // ================= INITIALIZE SETTINGS =================
+    const localTheme = localStorage.getItem(THEME_KEY);
 
-    const savedSettings = readSettings();
-
-    fillForm(savedSettings);
-    applyTheme(savedSettings.themePreference);
-
-    updateConnectionStatus(
-        savedSettings.apiBaseUrl
-            ? "Backend URL is configured. Tap here to check the connection."
-            : "Backend connection has not been verified.",
-        ""
-    );
-
-    if (currentYear) {
-        currentYear.textContent = new Date().getFullYear();
+    if (localTheme) {
+        applyTheme(localTheme);
     }
+
+    loadSettings();
 
     console.log("KEWA Admin Settings initialized.");
 

@@ -3,10 +3,14 @@
 
 document.addEventListener("DOMContentLoaded", function () {
 
-    // ================= STORAGE KEYS =================
+    // ================= BACKEND CONFIG =================
 
-    const PROJECTS_KEY = "kewadev_admin_projects";
-    const ENQUIRIES_KEY = "kewadev_admin_enquiries";
+    const API_BASE_URL = "https://backend-port-wr91.onrender.com";
+
+    const PROJECTS_API = `${API_BASE_URL}/api/projects`;
+    const ENQUIRIES_API = `${API_BASE_URL}/api/enquiries`;
+
+    // Theme/settings browser mein hi rahenge
     const THEME_KEY = "kewadev_admin_theme";
     const SETTINGS_KEY = "kewadev_admin_settings";
 
@@ -33,21 +37,17 @@ document.addEventListener("DOMContentLoaded", function () {
     let projects = [];
     let enquiries = [];
 
-    // ================= SAFE STORAGE =================
+    // ================= LOCAL SETTINGS =================
 
     function readJSON(key, fallback) {
         try {
             const value = localStorage.getItem(key);
 
-            if (value === null) {
-                return fallback;
-            }
+            if (value === null) return fallback;
 
-            const parsed = JSON.parse(value);
-
-            return parsed;
+            return JSON.parse(value);
         } catch (error) {
-            console.warn("Could not read storage:", key, error);
+            console.warn("Could not read settings:", key, error);
             return fallback;
         }
     }
@@ -57,9 +57,36 @@ document.addEventListener("DOMContentLoaded", function () {
             localStorage.setItem(key, value);
             return true;
         } catch (error) {
-            console.warn("Could not save storage:", error);
+            console.warn("Could not save settings:", error);
             return false;
         }
+    }
+
+    // ================= BACKEND API =================
+
+    async function apiRequest(url, options = {}) {
+        const response = await fetch(url, {
+            ...options,
+            headers: {
+                "Accept": "application/json",
+                ...(options.body ? {
+                    "Content-Type": "application/json"
+                } : {}),
+                ...options.headers
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(
+                `Backend request failed: ${response.status}`
+            );
+        }
+
+        if (response.status === 204) {
+            return null;
+        }
+
+        return response.json();
     }
 
     // ================= HTML ESCAPING =================
@@ -78,26 +105,38 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    // ================= LOAD PROJECTS =================
+    // ================= LOAD PROJECTS FROM BACKEND =================
 
-    function loadProjects() {
-        const stored = readJSON(PROJECTS_KEY, null);
+    async function loadProjects() {
+        try {
+            const data = await apiRequest(PROJECTS_API);
 
-        if (Array.isArray(stored)) {
-            projects = stored;
-        } else {
+            projects = Array.isArray(data)
+                ? data
+                : Array.isArray(data?.projects)
+                    ? data.projects
+                    : [];
+
+        } catch (error) {
+            console.error("Could not load projects:", error);
             projects = [];
         }
     }
 
-    // ================= LOAD ENQUIRIES =================
+    // ================= LOAD ENQUIRIES FROM BACKEND =================
 
-    function loadEnquiries() {
-        const stored = readJSON(ENQUIRIES_KEY, []);
+    async function loadEnquiries() {
+        try {
+            const data = await apiRequest(ENQUIRIES_API);
 
-        if (Array.isArray(stored)) {
-            enquiries = stored;
-        } else {
+            enquiries = Array.isArray(data)
+                ? data
+                : Array.isArray(data?.enquiries)
+                    ? data.enquiries
+                    : [];
+
+        } catch (error) {
+            console.error("Could not load enquiries:", error);
             enquiries = [];
         }
     }
@@ -112,9 +151,7 @@ document.addEventListener("DOMContentLoaded", function () {
             item.timestamp ||
             0;
 
-        if (typeof value === "number") {
-            return value;
-        }
+        if (typeof value === "number") return value;
 
         const parsed = Date.parse(value);
 
@@ -122,14 +159,10 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function formatDate(value) {
-        if (!value) {
-            return "Date unavailable";
-        }
+        if (!value) return "Date unavailable";
 
         const timestamp =
-            typeof value === "number"
-                ? value
-                : Date.parse(value);
+            typeof value === "number" ? value : Date.parse(value);
 
         if (!Number.isFinite(timestamp)) {
             return "Date unavailable";
@@ -152,14 +185,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function updateStatistics() {
         totalProjects.textContent = projects.length;
-
         totalEnquiries.textContent = enquiries.length;
 
         activeProjects.textContent = projects.filter(function (project) {
             return isPublished(project);
         }).length;
 
-        // Visitor analytics has not been connected.
+        // Visitor analytics abhi connect nahi hai.
         websiteVisitors.textContent = "—";
     }
 
@@ -170,9 +202,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function matchesSearch(item, fields, term) {
-        if (!term) {
-            return true;
-        }
+        if (!term) return true;
 
         return fields.some(function (field) {
             const value = item[field];
@@ -326,9 +356,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         <small>${escapeHTML(date)}</small>
                     </div>
 
-                    <span class="status-badge">
-                        ${status}
-                    </span>
+                    <span class="status-badge">${status}</span>
                 </div>
             `;
         }).join("");
@@ -350,7 +378,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
         const storedTheme = readJSON(THEME_KEY, null);
 
-        // THEME_KEY normally stores a plain string, not JSON.
         let rawTheme = null;
 
         try {
@@ -515,15 +542,21 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // ================= INITIALIZE DASHBOARD =================
 
-    loadProjects();
-    loadEnquiries();
+    async function initializeDashboard() {
+        applyTheme(getThemePreference());
 
-    updateStatistics();
-    renderProjects();
-    renderEnquiries();
+        await Promise.all([
+            loadProjects(),
+            loadEnquiries()
+        ]);
 
-    applyTheme(getThemePreference());
+        updateStatistics();
+        renderProjects();
+        renderEnquiries();
 
-    console.log("KEWA Admin Dashboard initialized.");
+        console.log("KEWA Admin Dashboard initialized.");
+    }
+
+    initializeDashboard();
 
 });

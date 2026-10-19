@@ -4,19 +4,18 @@
 document.addEventListener("DOMContentLoaded", function () {
 
     /* =====================================
-       KEWA PORTFOLIO ADMIN
-       File: js/projects.js
+       KEWADEV ADMIN - PROJECTS
+       Backend connected version
        ===================================== */
 
-    const STORAGE_KEY = "kewadev_admin_projects";
+    const API_BASE_URL = "https://backend-port-wr91.onrender.com";
     const THEME_KEY = "kewadev_admin_theme";
     const ITEMS_PER_PAGE = 5;
 
     let projects = [];
     let currentPage = 1;
     let pendingDeleteId = null;
-    let messageTimer;
-
+    let messageTimer = null;
 
     /* ---------- ELEMENTS ---------- */
 
@@ -54,14 +53,17 @@ document.addEventListener("DOMContentLoaded", function () {
     const projectForm = document.getElementById("projectForm");
     const projectId = document.getElementById("projectId");
     const projectName = document.getElementById("projectName");
-    const projectShortDescription = document.getElementById("projectShortDescription");
-    const projectDescription = document.getElementById("projectDescription");
+    const projectShortDescription =
+        document.getElementById("projectShortDescription");
+    const projectDescription =
+        document.getElementById("projectDescription");
     const projectCategory = document.getElementById("projectCategory");
     const projectStatus = document.getElementById("projectStatus");
     const projectImage = document.getElementById("projectImage");
     const projectLiveUrl = document.getElementById("projectLiveUrl");
     const projectGithubUrl = document.getElementById("projectGithubUrl");
-    const projectTechnologies = document.getElementById("projectTechnologies");
+    const projectTechnologies =
+        document.getElementById("projectTechnologies");
     const modalTitle = document.getElementById("modalTitle");
     const saveProjectBtn = document.getElementById("saveProjectBtn");
 
@@ -71,7 +73,6 @@ document.addEventListener("DOMContentLoaded", function () {
     const confirmDeleteBtn = document.getElementById("confirmDeleteBtn");
 
     const currentYear = document.getElementById("currentYear");
-
 
     /* ---------- CONSTANTS ---------- */
 
@@ -87,28 +88,47 @@ document.addEventListener("DOMContentLoaded", function () {
         draft: "Draft"
     };
 
+    /* ---------- API HELPER ---------- */
 
-    /* ---------- DEFAULT PROJECT ---------- */
+    async function apiRequest(endpoint, options = {}) {
+        const headers = new Headers(options.headers || {});
 
-    const defaultProjects = [
-        {
-            id: "kewa-trade-tracker",
-            name: "KEWA Trade Tracker",
-            shortDescription:
-                "A trading profit and loss tracking application.",
-            description:
-                "KEWA Trade Tracker helps users record trades, calculate profit and loss, monitor trading performance and generate reports.",
-            category: "web",
-            status: "published",
-            image: "",
-            liveUrl: "https://trade-tracker-h0lo.vercel.app/",
-            githubUrl: "",
-            technologies: ["HTML", "CSS", "JavaScript", "LocalStorage"],
-            createdAt: Date.now(),
-            updatedAt: Date.now()
+        if (
+            options.body &&
+            !(options.body instanceof FormData) &&
+            !headers.has("Content-Type")
+        ) {
+            headers.set("Content-Type", "application/json");
         }
-    ];
 
+        const response = await fetch(
+            `${API_BASE_URL}${endpoint}`,
+            {
+                ...options,
+                headers,
+                credentials: "include"
+            }
+        );
+
+        const contentType = response.headers.get("content-type") || "";
+        let result = null;
+
+        if (contentType.includes("application/json")) {
+            result = await response.json();
+        } else {
+            const text = await response.text();
+            result = text ? { message: text } : null;
+        }
+
+        if (!response.ok) {
+            throw new Error(
+                result?.message ||
+                `Request failed with status ${response.status}`
+            );
+        }
+
+        return result;
+    }
 
     /* ---------- SAFE HTML ---------- */
 
@@ -126,7 +146,6 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-
     /* ---------- MESSAGE ---------- */
 
     function showMessage(message, type = "success") {
@@ -143,11 +162,10 @@ document.addEventListener("DOMContentLoaded", function () {
         }, 3500);
     }
 
-
     /* ---------- DATE ---------- */
 
-    function formatDate(timestamp) {
-        const date = new Date(timestamp);
+    function formatDate(value) {
+        const date = new Date(value);
 
         if (Number.isNaN(date.getTime())) {
             return "—";
@@ -160,81 +178,50 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
+    /* ---------- NORMALIZE PROJECT ---------- */
 
-    /* ---------- LOAD PROJECTS ---------- */
+    function normalizeProject(item) {
+        return {
+            id: String(item.id ?? item._id ?? ""),
+            name: String(item.name || ""),
+            shortDescription: String(item.shortDescription || ""),
+            description: String(item.description || ""),
+            category: categories[item.category] ? item.category : "other",
+            status: statuses[item.status] ? item.status : "draft",
+            image: String(item.image || ""),
+            liveUrl: String(item.liveUrl || ""),
+            githubUrl: String(item.githubUrl || ""),
+            technologies: Array.isArray(item.technologies)
+                ? item.technologies.map(String)
+                : [],
+            createdAt: item.createdAt || Date.now(),
+            updatedAt: item.updatedAt || item.createdAt || Date.now()
+        };
+    }
 
-    function loadProjects() {
-        try {
-            const saved = localStorage.getItem(STORAGE_KEY);
+    /* ---------- LOAD PROJECTS FROM BACKEND ---------- */
 
-            if (saved === null) {
-                projects = [...defaultProjects];
-                saveProjects();
-                return;
-            }
+    async function loadProjects() {
+        const result = await apiRequest("/api/projects", {
+            method: "GET"
+        });
 
-            const parsed = JSON.parse(saved);
+        let list;
 
-            if (!Array.isArray(parsed)) {
-                projects = [...defaultProjects];
-                saveProjects();
-                return;
-            }
-
-            projects = parsed.map(function (item) {
-                return {
-                    id: String(item.id || createId()),
-                    name: String(item.name || ""),
-                    shortDescription: String(item.shortDescription || ""),
-                    description: String(item.description || ""),
-                    category: categories[item.category]
-                        ? item.category
-                        : "other",
-                    status: statuses[item.status]
-                        ? item.status
-                        : "draft",
-                    image: String(item.image || ""),
-                    liveUrl: String(item.liveUrl || ""),
-                    githubUrl: String(item.githubUrl || ""),
-                    technologies: Array.isArray(item.technologies)
-                        ? item.technologies.map(String)
-                        : [],
-                    createdAt: Number(item.createdAt) || Date.now(),
-                    updatedAt: Number(item.updatedAt) || Date.now()
-                };
-            });
-
-        } catch (error) {
-            console.error("Could not load projects:", error);
-            projects = [];
-            showMessage("Could not load saved projects.", "error");
+        if (Array.isArray(result)) {
+            list = result;
+        } else if (Array.isArray(result?.projects)) {
+            list = result.projects;
+        } else if (Array.isArray(result?.data)) {
+            list = result.data;
+        } else {
+            throw new Error(
+                "Backend response mein projects array nahi mila."
+            );
         }
+
+        projects = list.map(normalizeProject);
     }
-
-
-    /* ---------- SAVE PROJECTS ---------- */
-
-    function saveProjects() {
-        try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(projects));
-            return true;
-
-        } catch (error) {
-            console.error("Could not save projects:", error);
-            showMessage("Could not save projects. Check browser storage.", "error");
-            return false;
-        }
-    }
-
-
-    /* ---------- CREATE ID ---------- */
-
-    function createId() {
-        return "project-" +
-            Date.now() + "-" +
-            Math.random().toString(36).slice(2, 8);
-    }
-
 
     /* ---------- STATISTICS ---------- */
 
@@ -247,19 +234,10 @@ document.addEventListener("DOMContentLoaded", function () {
             return project.status === "draft";
         }).length;
 
-        if (totalProjects) {
-            totalProjects.textContent = projects.length;
-        }
-
-        if (publishedProjects) {
-            publishedProjects.textContent = published;
-        }
-
-        if (draftProjects) {
-            draftProjects.textContent = drafts;
-        }
+        if (totalProjects) totalProjects.textContent = projects.length;
+        if (publishedProjects) publishedProjects.textContent = published;
+        if (draftProjects) draftProjects.textContent = drafts;
     }
-
 
     /* ---------- SEARCH AND FILTER ---------- */
 
@@ -280,13 +258,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
         if (search) {
             result = result.filter(function (project) {
-                const technologies = project.technologies.join(" ");
-
                 return (
                     project.name.toLowerCase().includes(search) ||
                     project.shortDescription.toLowerCase().includes(search) ||
                     project.description.toLowerCase().includes(search) ||
-                    technologies.toLowerCase().includes(search)
+                    project.technologies.join(" ").toLowerCase().includes(search)
                 );
             });
         }
@@ -304,14 +280,13 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         result.sort(function (a, b) {
-            return b.updatedAt - a.updatedAt;
+            return new Date(b.updatedAt) - new Date(a.updatedAt);
         });
 
         return result;
     }
 
-
-    /* ---------- RENDER PROJECT TABLE ---------- */
+    /* ---------- RENDER PROJECTS ---------- */
 
     function renderProjects() {
         if (!projectsTableBody) return;
@@ -325,9 +300,7 @@ document.addEventListener("DOMContentLoaded", function () {
             Math.ceil(filtered.length / ITEMS_PER_PAGE)
         );
 
-        if (currentPage > totalPages) {
-            currentPage = totalPages;
-        }
+        if (currentPage > totalPages) currentPage = totalPages;
 
         const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
 
@@ -349,52 +322,40 @@ document.addEventListener("DOMContentLoaded", function () {
             const statusName = statuses[project.status] || "Draft";
 
             const imageMarkup = project.image
-                ? `<img
-                       src="${escapeHTML(project.image)}"
-                       alt=""
-                       class="project-thumb"
-                       loading="lazy"
-                       referrerpolicy="no-referrer"
-                   >`
+                ? `<img src="${escapeHTML(project.image)}"
+                        alt=""
+                        class="project-thumb"
+                        loading="lazy"
+                        referrerpolicy="no-referrer">`
                 : `<span class="project-thumb-placeholder">▣</span>`;
 
             row.innerHTML = `
                 <td>
                     <div class="project-cell">
                         ${imageMarkup}
-
                         <div class="project-info">
                             <strong>${escapeHTML(project.name)}</strong>
                             <small>${escapeHTML(project.shortDescription)}</small>
                         </div>
                     </div>
                 </td>
-
                 <td>${escapeHTML(categoryName)}</td>
-
                 <td>
                     <span class="status-badge ${escapeHTML(project.status)}">
                         ${escapeHTML(statusName)}
                     </span>
                 </td>
-
                 <td>${escapeHTML(formatDate(project.updatedAt))}</td>
-
                 <td>
                     <div class="project-actions">
-                        <button
-                            type="button"
+                        <button type="button"
                             class="edit-btn"
                             data-action="edit"
-                            data-id="${escapeHTML(project.id)}"
-                        >Edit</button>
-
-                        <button
-                            type="button"
+                            data-id="${escapeHTML(project.id)}">Edit</button>
+                        <button type="button"
                             class="delete-btn"
                             data-action="delete"
-                            data-id="${escapeHTML(project.id)}"
-                        >Delete</button>
+                            data-id="${escapeHTML(project.id)}">Delete</button>
                     </div>
                 </td>
             `;
@@ -405,13 +366,10 @@ document.addEventListener("DOMContentLoaded", function () {
         if (paginationInfo) {
             paginationInfo.textContent = filtered.length === 0
                 ? "Showing 0 projects"
-                : "Showing " +
-                    (startIndex + 1) +
-                    "–" +
-                    Math.min(startIndex + ITEMS_PER_PAGE, filtered.length) +
-                    " of " +
-                    filtered.length +
-                    " projects";
+                : `Showing ${startIndex + 1}–${Math.min(
+                    startIndex + ITEMS_PER_PAGE,
+                    filtered.length
+                )} of ${filtered.length} projects`;
         }
 
         if (currentPageElement) {
@@ -427,29 +385,29 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
-    /* PART 1 ENDS HERE */
+    /* PART 1 ENDS — PART 2 IS NEXT */
 
-    // ================= ADD / EDIT PROJECT MODAL =================
+    /* ---------- CREATE / EDIT MODAL ---------- */
 
     function openProjectModal(project = null) {
+        if (!projectForm || !projectModal) return;
+
         projectForm.reset();
 
         if (project) {
             modalTitle.textContent = "Edit Project";
             saveProjectBtn.textContent = "Update Project";
 
-            projectId.value = project.id || "";
-            projectName.value = project.name || "";
-            projectShortDescription.value = project.shortDescription || "";
-            projectDescription.value = project.description || "";
-            projectCategory.value = project.category || "web";
-            projectStatus.value = project.status || "draft";
-            projectImage.value = project.image || "";
-            projectLiveUrl.value = project.liveUrl || "";
-            projectGithubUrl.value = project.githubUrl || "";
-            projectTechnologies.value = Array.isArray(project.technologies)
-                ? project.technologies.join(", ")
-                : "";
+            projectId.value = project.id;
+            projectName.value = project.name;
+            projectShortDescription.value = project.shortDescription;
+            projectDescription.value = project.description;
+            projectCategory.value = project.category;
+            projectStatus.value = project.status;
+            projectImage.value = project.image;
+            projectLiveUrl.value = project.liveUrl;
+            projectGithubUrl.value = project.githubUrl;
+            projectTechnologies.value = project.technologies.join(", ");
         } else {
             modalTitle.textContent = "Add New Project";
             saveProjectBtn.textContent = "Save Project";
@@ -464,23 +422,24 @@ document.addEventListener("DOMContentLoaded", function () {
         document.body.classList.add("modal-open");
 
         setTimeout(function () {
-            projectName.focus();
+            projectName?.focus();
         }, 50);
     }
 
     function closeProjectModal() {
+        if (!projectModal) return;
+
         projectModal.hidden = true;
         projectModal.setAttribute("aria-hidden", "true");
 
-        if (deleteModal.hidden) {
+        if (!deleteModal || deleteModal.hidden) {
             document.body.classList.remove("modal-open");
         }
 
-        projectForm.reset();
+        projectForm?.reset();
     }
 
-
-    // ================= DELETE CONFIRMATION MODAL =================
+    /* ---------- DELETE MODAL ---------- */
 
     function openDeleteModal(id) {
         pendingDeleteId = id;
@@ -491,22 +450,21 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function closeDeleteModal() {
+        if (!deleteModal) return;
+
         deleteModal.hidden = true;
         deleteModal.setAttribute("aria-hidden", "true");
         pendingDeleteId = null;
 
-        if (projectModal.hidden) {
+        if (!projectModal || projectModal.hidden) {
             document.body.classList.remove("modal-open");
         }
     }
 
-
-    // ================= VALIDATE OPTIONAL URLS =================
+    /* ---------- URL VALIDATION ---------- */
 
     function isValidOptionalURL(value) {
-        if (!value.trim()) {
-            return true;
-        }
+        if (!value.trim()) return true;
 
         try {
             const parsedURL = new URL(value.trim());
@@ -515,419 +473,416 @@ document.addEventListener("DOMContentLoaded", function () {
                 parsedURL.protocol === "https:" ||
                 parsedURL.protocol === "http:"
             );
-        } catch (error) {
+        } catch (_) {
             return false;
         }
     }
 
+    /* ---------- ADD BUTTONS ---------- */
 
-    // ================= ADD PROJECT BUTTONS =================
-
-    addProjectBtn.addEventListener("click", function () {
-        openProjectModal();
-    });
-
-    emptyAddProjectBtn.addEventListener("click", function () {
-        openProjectModal();
-    });
-
-
-    // ================= CLOSE PROJECT MODAL =================
-
-    closeModalBtn.addEventListener("click", closeProjectModal);
-    cancelProjectBtn.addEventListener("click", closeProjectModal);
-
-    modalBackdrop.addEventListener("click", function () {
-        closeProjectModal();
-    });
-
-
-    // ================= SAVE / UPDATE PROJECT =================
-
-    projectForm.addEventListener("submit", function (event) {
-        event.preventDefault();
-
-        const id = projectId.value.trim();
-        const name = projectName.value.trim();
-        const shortDescription = projectShortDescription.value.trim();
-        const description = projectDescription.value.trim();
-        const category = projectCategory.value;
-        const status = projectStatus.value;
-        const image = projectImage.value.trim();
-        const liveUrl = projectLiveUrl.value.trim();
-        const githubUrl = projectGithubUrl.value.trim();
-
-        const technologies = projectTechnologies.value
-            .split(",")
-            .map(function (technology) {
-                return technology.trim();
-            })
-            .filter(Boolean);
-
-        if (!name || !shortDescription || !description) {
-            showMessage(
-                "Please fill in all required project fields.",
-                "error"
-            );
-            return;
-        }
-
-        if (!Object.prototype.hasOwnProperty.call(categories, category)) {
-            showMessage("Please select a valid category.", "error");
-            return;
-        }
-
-        if (!Object.prototype.hasOwnProperty.call(statuses, status)) {
-            showMessage("Please select a valid status.", "error");
-            return;
-        }
-
-        if (
-            !isValidOptionalURL(image) ||
-            !isValidOptionalURL(liveUrl) ||
-            !isValidOptionalURL(githubUrl)
-        ) {
-            showMessage(
-                "Please enter valid image, live demo, or GitHub URLs.",
-                "error"
-            );
-            return;
-        }
-
-        const now = Date.now();
-        const previousProjects = projects.map(function (item) {
-            return { ...item };
+    if (addProjectBtn) {
+        addProjectBtn.addEventListener("click", function () {
+            openProjectModal();
         });
+    }
 
-        if (id) {
-            const index = projects.findIndex(function (item) {
-                return item.id === id;
-            });
+    if (emptyAddProjectBtn) {
+        emptyAddProjectBtn.addEventListener("click", function () {
+            openProjectModal();
+        });
+    }
 
-            if (index === -1) {
-                showMessage("Project not found. Please refresh.", "error");
+    /* ---------- CLOSE MODAL BUTTONS ---------- */
+
+    if (closeModalBtn) {
+        closeModalBtn.addEventListener("click", closeProjectModal);
+    }
+
+    if (cancelProjectBtn) {
+        cancelProjectBtn.addEventListener("click", closeProjectModal);
+    }
+
+    if (modalBackdrop) {
+        modalBackdrop.addEventListener("click", closeProjectModal);
+    }
+
+    /* ---------- SAVE / UPDATE PROJECT ---------- */
+
+    if (projectForm) {
+        projectForm.addEventListener("submit", async function (event) {
+            event.preventDefault();
+
+            const id = projectId.value.trim();
+            const name = projectName.value.trim();
+            const shortDescription = projectShortDescription.value.trim();
+            const description = projectDescription.value.trim();
+            const category = projectCategory.value;
+            const status = projectStatus.value;
+            const image = projectImage.value.trim();
+            const liveUrl = projectLiveUrl.value.trim();
+            const githubUrl = projectGithubUrl.value.trim();
+
+            const technologies = projectTechnologies.value
+                .split(",")
+                .map(function (technology) {
+                    return technology.trim();
+                })
+                .filter(Boolean);
+
+            if (!name || !shortDescription || !description) {
+                showMessage("Please fill in all required project fields.", "error");
                 return;
             }
 
-            projects[index] = {
-                ...projects[index],
-                name: name,
-                shortDescription: shortDescription,
-                description: description,
-                category: category,
-                status: status,
-                image: image,
-                liveUrl: liveUrl,
-                githubUrl: githubUrl,
-                technologies: technologies,
-                updatedAt: now
+            if (!Object.prototype.hasOwnProperty.call(categories, category)) {
+                showMessage("Please select a valid category.", "error");
+                return;
+            }
+
+            if (!Object.prototype.hasOwnProperty.call(statuses, status)) {
+                showMessage("Please select a valid status.", "error");
+                return;
+            }
+
+            if (
+                !isValidOptionalURL(image) ||
+                !isValidOptionalURL(liveUrl) ||
+                !isValidOptionalURL(githubUrl)
+            ) {
+                showMessage("Please enter valid HTTP or HTTPS URLs.", "error");
+                return;
+            }
+
+            const payload = {
+                name,
+                shortDescription,
+                description,
+                category,
+                status,
+                image,
+                liveUrl,
+                githubUrl,
+                technologies
             };
-        } else {
-            projects.unshift({
-                id: createId(),
-                name: name,
-                shortDescription: shortDescription,
-                description: description,
-                category: category,
-                status: status,
-                image: image,
-                liveUrl: liveUrl,
-                githubUrl: githubUrl,
-                technologies: technologies,
-                createdAt: now,
-                updatedAt: now
+
+            const oldText = saveProjectBtn.textContent;
+            saveProjectBtn.disabled = true;
+            saveProjectBtn.textContent = id ? "Updating..." : "Saving...";
+
+            try {
+                const result = await apiRequest(
+                    id
+                        ? `/api/projects/${encodeURIComponent(id)}`
+                        : "/api/projects",
+                    {
+                        method: id ? "PUT" : "POST",
+                        body: JSON.stringify(payload)
+                    }
+                );
+
+                await loadProjects();
+                currentPage = 1;
+                renderProjects();
+                closeProjectModal();
+
+                showMessage(
+                    result?.message ||
+                    (id ? "Project updated successfully." : "Project added successfully."),
+                    "success"
+                );
+            } catch (error) {
+                console.error("Save project error:", error);
+                showMessage(error.message || "Could not save project.", "error");
+            } finally {
+                saveProjectBtn.disabled = false;
+                saveProjectBtn.textContent = oldText;
+            }
+        });
+    }
+
+    /* ---------- EDIT / DELETE ACTIONS ---------- */
+
+    if (projectsTableBody) {
+        projectsTableBody.addEventListener("click", function (event) {
+            const button = event.target.closest("button[data-action]");
+            if (!button) return;
+
+            const project = projects.find(function (item) {
+                return String(item.id) === String(button.dataset.id);
             });
-        }
 
-        if (!saveProjects()) {
-            projects = previousProjects;
-            showMessage(
-                "Could not save project. Please check your browser storage.",
-                "error"
-            );
-            return;
-        }
+            if (!project) {
+                showMessage("Project not found. Refresh and try again.", "error");
+                return;
+            }
 
-        closeProjectModal();
-        currentPage = 1;
-        renderProjects();
+            if (button.dataset.action === "edit") {
+                openProjectModal(project);
+            }
 
-        showMessage(
-            id ? "Project updated successfully." : "Project added successfully.",
-            "success"
-        );
-    });
-
-
-    // ================= PROJECT TABLE EDIT / DELETE =================
-
-    projectsTableBody.addEventListener("click", function (event) {
-        const button = event.target.closest("[data-action][data-id]");
-
-        if (!button) {
-            return;
-        }
-
-        const action = button.dataset.action;
-        const id = button.dataset.id;
-
-        const project = projects.find(function (item) {
-            return item.id === id;
+            if (button.dataset.action === "delete") {
+                openDeleteModal(project.id);
+            }
         });
+    }
 
-        if (!project) {
-            showMessage("Project not found.", "error");
-            return;
-        }
+    /* ---------- DELETE PROJECT ---------- */
 
-        if (action === "edit") {
-            openProjectModal(project);
-        }
+    if (cancelDeleteBtn) {
+        cancelDeleteBtn.addEventListener("click", closeDeleteModal);
+    }
 
-        if (action === "delete") {
-            openDeleteModal(id);
-        }
-    });
+    if (deleteBackdrop) {
+        deleteBackdrop.addEventListener("click", closeDeleteModal);
+    }
 
+    if (confirmDeleteBtn) {
+        confirmDeleteBtn.addEventListener("click", async function () {
+            if (!pendingDeleteId) return;
 
-    // ================= CLOSE DELETE MODAL =================
+            const id = pendingDeleteId;
+            const oldText = confirmDeleteBtn.textContent;
 
-    cancelDeleteBtn.addEventListener("click", closeDeleteModal);
+            confirmDeleteBtn.disabled = true;
+            confirmDeleteBtn.textContent = "Deleting...";
 
-    deleteBackdrop.addEventListener("click", function () {
-        closeDeleteModal();
-    });
+            try {
+                const result = await apiRequest(
+                    `/api/projects/${encodeURIComponent(id)}`,
+                    { method: "DELETE" }
+                );
 
+                closeDeleteModal();
+                await loadProjects();
+                renderProjects();
 
-    // ================= CONFIRM DELETE PROJECT =================
-
-    confirmDeleteBtn.addEventListener("click", function () {
-        if (!pendingDeleteId) {
-            return;
-        }
-
-        const previousProjects = projects.map(function (item) {
-            return { ...item };
+                showMessage(
+                    result?.message || "Project deleted successfully.",
+                    "success"
+                );
+            } catch (error) {
+                console.error("Delete project error:", error);
+                showMessage(error.message || "Could not delete project.", "error");
+            } finally {
+                confirmDeleteBtn.disabled = false;
+                confirmDeleteBtn.textContent = oldText;
+            }
         });
+    }
 
-        const idToDelete = pendingDeleteId;
+    /* ---------- SEARCH / FILTER ---------- */
 
-        projects = projects.filter(function (item) {
-            return item.id !== idToDelete;
-        });
-
-        if (projects.length === previousProjects.length) {
-            closeDeleteModal();
-            showMessage("Project not found.", "error");
-            return;
-        }
-
-        if (!saveProjects()) {
-            projects = previousProjects;
-            closeDeleteModal();
-
-            showMessage(
-                "Could not delete project. Please try again.",
-                "error"
-            );
-            return;
-        }
-
-        closeDeleteModal();
-
-        const filteredProjects = getFilteredProjects();
-        const totalPages = Math.max(
-            1,
-            Math.ceil(filteredProjects.length / ITEMS_PER_PAGE)
-        );
-
-        if (currentPage > totalPages) {
-            currentPage = totalPages;
-        }
-
-        renderProjects();
-        showMessage("Project deleted successfully.", "success");
-    });
-
-
-    // ================= SEARCH PROJECTS =================
-
-    projectSearch.addEventListener("input", function () {
-        currentPage = 1;
-        renderProjects();
-    });
-
-
-    // ================= CATEGORY FILTER =================
-
-    categoryFilter.addEventListener("change", function () {
-        currentPage = 1;
-        renderProjects();
-    });
-
-
-    // ================= STATUS FILTER =================
-
-    statusFilter.addEventListener("change", function () {
-        currentPage = 1;
-        renderProjects();
-    });
-
-
-    // ================= REFRESH PROJECTS =================
-
-    refreshProjectsBtn.addEventListener("click", function () {
-        loadProjects();
-        currentPage = 1;
-        renderProjects();
-
-        showMessage("Projects refreshed from this browser's storage.", "success");
-    });
-
-
-    // ================= PAGINATION =================
-
-    previousPageBtn.addEventListener("click", function () {
-        if (currentPage > 1) {
-            currentPage--;
+    if (projectSearch) {
+        projectSearch.addEventListener("input", function () {
+            currentPage = 1;
             renderProjects();
-        }
-    });
+        });
+    }
 
-    nextPageBtn.addEventListener("click", function () {
-        const totalPages = Math.max(
-            1,
-            Math.ceil(getFilteredProjects().length / ITEMS_PER_PAGE)
-        );
-
-        if (currentPage < totalPages) {
-            currentPage++;
+    if (categoryFilter) {
+        categoryFilter.addEventListener("change", function () {
+            currentPage = 1;
             renderProjects();
-        }
-    });
-
-
-    // ================= THEME TOGGLE =================
-
-    function applyTheme() {
-        let savedTheme = "dark";
-
-        try {
-            savedTheme = localStorage.getItem(THEME_KEY) || "dark";
-        } catch (error) {
-            console.warn("Could not read saved theme.", error);
-        }
-
-        document.body.classList.toggle(
-            "light-theme",
-            savedTheme === "light"
-        );
-
-        themeBtn.setAttribute(
-            "aria-pressed",
-            savedTheme === "light" ? "true" : "false"
-        );
-
-        themeBtn.setAttribute(
-            "aria-label",
-            savedTheme === "light"
-                ? "Switch to dark theme"
-                : "Switch to light theme"
-        );
+        });
     }
 
-    themeBtn.addEventListener("click", function () {
-        const isLight = document.body.classList.toggle("light-theme");
-        const newTheme = isLight ? "light" : "dark";
-
-        try {
-            localStorage.setItem(THEME_KEY, newTheme);
-        } catch (error) {
-            console.warn("Could not save theme.", error);
-        }
-
-        themeBtn.setAttribute("aria-pressed", String(isLight));
-        themeBtn.setAttribute(
-            "aria-label",
-            isLight ? "Switch to dark theme" : "Switch to light theme"
-        );
-    });
-
-
-    // ================= MOBILE SIDEBAR =================
-
-    let sidebarOverlay = document.querySelector(".sidebar-overlay");
-
-    if (!sidebarOverlay) {
-        sidebarOverlay = document.createElement("div");
-        sidebarOverlay.className = "sidebar-overlay";
-        document.body.appendChild(sidebarOverlay);
+    if (statusFilter) {
+        statusFilter.addEventListener("change", function () {
+            currentPage = 1;
+            renderProjects();
+        });
     }
 
-    function toggleSidebar(forceState) {
-        const shouldOpen =
-            typeof forceState === "boolean"
-                ? forceState
-                : !sidebar.classList.contains("open");
+    /* ---------- PAGINATION ---------- */
 
-        sidebar.classList.toggle("open", shouldOpen);
-        sidebarOverlay.classList.toggle("active", shouldOpen);
-        menuBtn.setAttribute("aria-expanded", String(shouldOpen));
-        document.body.classList.toggle("sidebar-open", shouldOpen);
+    if (previousPageBtn) {
+        previousPageBtn.addEventListener("click", function () {
+            if (currentPage > 1) {
+                currentPage--;
+                renderProjects();
+            }
+        });
     }
 
-    menuBtn.addEventListener("click", function () {
-        toggleSidebar();
-    });
+    if (nextPageBtn) {
+        nextPageBtn.addEventListener("click", function () {
+            const totalPages = Math.max(
+                1,
+                Math.ceil(getFilteredProjects().length / ITEMS_PER_PAGE)
+            );
 
-    sidebarOverlay.addEventListener("click", function () {
-        toggleSidebar(false);
-    });
+            if (currentPage < totalPages) {
+                currentPage++;
+                renderProjects();
+            }
+        });
+    }
 
+    /* ---------- REFRESH ---------- */
 
-    // ================= ESCAPE KEY =================
+    if (refreshProjectsBtn) {
+        refreshProjectsBtn.addEventListener("click", async function () {
+            const oldText = refreshProjectsBtn.textContent;
+
+            refreshProjectsBtn.disabled = true;
+            refreshProjectsBtn.textContent = "Refreshing...";
+
+            try {
+                await loadProjects();
+                currentPage = 1;
+                renderProjects();
+                showMessage("Projects refreshed.", "success");
+            } catch (error) {
+                console.error("Refresh error:", error);
+                showMessage(error.message || "Could not refresh projects.", "error");
+            } finally {
+                refreshProjectsBtn.disabled = false;
+                refreshProjectsBtn.textContent = oldText;
+            }
+        });
+    }
+
+    /* ---------- KEYBOARD ---------- */
 
     document.addEventListener("keydown", function (event) {
-        if (event.key !== "Escape") {
-            return;
+        if (event.key === "Escape") {
+            if (projectModal && !projectModal.hidden) closeProjectModal();
+            if (deleteModal && !deleteModal.hidden) closeDeleteModal();
         }
-
-        if (!deleteModal.hidden) {
-            closeDeleteModal();
-        }
-
-        if (!projectModal.hidden) {
-            closeProjectModal();
-        }
-
-        toggleSidebar(false);
     });
 
+    /* ---------- THEME ---------- */
 
-    // ================= LOGOUT =================
+    function applyTheme(theme) {
+        const isLight = theme === "light";
 
-    logoutBtn.addEventListener("click", function () {
-        const confirmed = window.confirm("Are you sure you want to logout?");
+        document.body.classList.toggle("light-theme", isLight);
+        document.documentElement.setAttribute("data-theme", theme);
 
-        if (confirmed) {
+        if (themeBtn) {
+            themeBtn.textContent = isLight ? "☾" : "☼";
+            themeBtn.setAttribute(
+                "aria-label",
+                isLight ? "Switch to dark theme" : "Switch to light theme"
+            );
+        }
+    }
+
+    function loadTheme() {
+        let theme = "dark";
+
+        try {
+            theme = localStorage.getItem(THEME_KEY) || "dark";
+        } catch (error) {
+            console.warn("Could not load theme.", error);
+        }
+
+        applyTheme(theme);
+    }
+
+    if (themeBtn) {
+        themeBtn.addEventListener("click", function () {
+            const currentTheme = document.body.classList.contains("light-theme")
+                ? "light"
+                : "dark";
+
+            const newTheme = currentTheme === "light" ? "dark" : "light";
+
+            applyTheme(newTheme);
+
+            try {
+                localStorage.setItem(THEME_KEY, newTheme);
+            } catch (error) {
+                console.warn("Could not save theme.", error);
+            }
+        });
+    }
+
+    /* ---------- MOBILE SIDEBAR ---------- */
+
+    function closeSidebar() {
+        if (sidebar) sidebar.classList.remove("open");
+
+        const overlay = document.querySelector(".sidebar-overlay");
+        if (overlay) overlay.classList.remove("active");
+    }
+
+    function openSidebar() {
+        if (!sidebar) return;
+
+        let overlay = document.querySelector(".sidebar-overlay");
+
+        if (!overlay) {
+            overlay = document.createElement("div");
+            overlay.className = "sidebar-overlay";
+            overlay.addEventListener("click", closeSidebar);
+            document.body.appendChild(overlay);
+        }
+
+        sidebar.classList.add("open");
+        overlay.classList.add("active");
+    }
+
+    if (menuBtn) {
+        menuBtn.addEventListener("click", function () {
+            if (sidebar?.classList.contains("open")) {
+                closeSidebar();
+            } else {
+                openSidebar();
+            }
+        });
+    }
+
+    window.addEventListener("resize", function () {
+        if (window.innerWidth > 850) closeSidebar();
+    });
+
+    /* ---------- LOGOUT ---------- */
+
+    if (logoutBtn) {
+        logoutBtn.addEventListener("click", async function (event) {
+            event.preventDefault();
+
+            if (!window.confirm("Kya tum logout karna chahte ho?")) return;
+
+            try {
+                await apiRequest("/api/auth/logout", {
+                    method: "POST",
+                    body: JSON.stringify({})
+                });
+            } catch (error) {
+                console.error("Logout error:", error);
+            }
+
             window.location.href = "../login.html";
-        }
-    });
+        });
+    }
 
-
-    // ================= FOOTER YEAR =================
+    /* ---------- FOOTER YEAR ---------- */
 
     if (currentYear) {
         currentYear.textContent = new Date().getFullYear();
     }
 
+    /* ---------- INITIALIZE ---------- */
 
-    // ================= INITIALIZE PROJECTS PAGE =================
+    async function initializeProjects() {
+        loadTheme();
 
-    applyTheme();
-    loadProjects();
-    renderProjects();
+        try {
+            await loadProjects();
+            renderProjects();
+        } catch (error) {
+            console.error("Load projects error:", error);
+            showMessage(
+                "Projects load nahi hue. Backend server aur API route check karo.",
+                "error"
+            );
+        }
 
-    console.log("KEWADEV Projects Admin initialized.");
+        console.log("KEWADEV Projects JS loaded.");
+    }
+
+    initializeProjects();
 
 });

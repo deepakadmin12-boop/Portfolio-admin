@@ -6,692 +6,906 @@
 
 "use strict";
 
+document.addEventListener("DOMContentLoaded", () => {
+    // ======================================
+    // CONFIGURATION
+    // ======================================
 
-/* ---------- STORAGE KEYS ---------- */
+    const API_BASE_URL = "https://backend-port-wr91.onrender.com";
+    const PROFILE_API = `${API_BASE_URL}/api/profile`;
+    const AUTH_API = `${API_BASE_URL}/api/auth`;
+    const THEME_STORAGE_KEY = "kewadev_admin_theme";
 
-const PROFILE_STORAGE_KEY = "kewadev_admin_profile";
-const THEME_STORAGE_KEY = "kewadev_admin_theme";
+    // ======================================
+    // DOM ELEMENTS
+    // ======================================
 
+    const sidebar = document.getElementById("sidebar");
+    const menuBtn = document.getElementById("menuBtn");
+    const themeToggle = document.getElementById("themeToggle");
+    const logoutBtn = document.getElementById("logoutBtn");
 
-/* ---------- DOM ELEMENTS ---------- */
+    const profileForm = document.getElementById("profileForm");
+    const passwordForm = document.getElementById("passwordForm");
 
-const sidebar = document.getElementById("sidebar");
-const menuBtn = document.getElementById("menuBtn");
-const themeToggle = document.getElementById("themeToggle");
-const logoutBtn = document.getElementById("logoutBtn");
+    const profileName = document.getElementById("profileName");
+    const profileUsername = document.getElementById("profileUsername");
+    const profileEmail = document.getElementById("profileEmail");
+    const profilePhone = document.getElementById("profilePhone");
+    const profileWebsite = document.getElementById("profileWebsite");
+    const profileBio = document.getElementById("profileBio");
 
-const profileForm = document.getElementById("profileForm");
-const passwordForm = document.getElementById("passwordForm");
+    const profilePhoto = document.getElementById("profilePhoto");
+    const removePhotoBtn = document.getElementById("removePhotoBtn");
 
-const profileName = document.getElementById("profileName");
-const profileUsername = document.getElementById("profileUsername");
-const profileEmail = document.getElementById("profileEmail");
-const profilePhone = document.getElementById("profilePhone");
-const profileWebsite = document.getElementById("profileWebsite");
-const profileBio = document.getElementById("profileBio");
+    const profileAvatar = document.getElementById("profileAvatar");
+    const uploadAvatarPreview = document.getElementById(
+        "uploadAvatarPreview"
+    );
+    const sidebarAvatar = document.getElementById("sidebarAvatar");
 
-const profilePhoto = document.getElementById("profilePhoto");
-const removePhotoBtn = document.getElementById("removePhotoBtn");
+    const profileDisplayName = document.getElementById(
+        "profileDisplayName"
+    );
+    const profileDisplayEmail = document.getElementById(
+        "profileDisplayEmail"
+    );
+    const sidebarName = document.getElementById("sidebarName");
 
-const profileAvatar = document.getElementById("profileAvatar");
-const uploadAvatarPreview = document.getElementById(
-    "uploadAvatarPreview"
-);
-const sidebarAvatar = document.getElementById("sidebarAvatar");
+    const profileLastUpdated = document.getElementById(
+        "profileLastUpdated"
+    );
+    const bioCharacterCount = document.getElementById(
+        "bioCharacterCount"
+    );
 
-const profileDisplayName = document.getElementById(
-    "profileDisplayName"
-);
-const profileDisplayEmail = document.getElementById(
-    "profileDisplayEmail"
-);
-const sidebarName = document.getElementById("sidebarName");
+    const profileMessage = document.getElementById("profileMessage");
+    const currentYear = document.getElementById("currentYear");
 
-const profileLastUpdated = document.getElementById(
-    "profileLastUpdated"
-);
+    // ======================================
+    // DEFAULT PROFILE
+    // ======================================
 
-const bioCharacterCount = document.getElementById(
-    "bioCharacterCount"
-);
+    const defaultProfile = {
+        name: "",
+        username: "",
+        email: "",
+        phone: "",
+        website: "",
+        bio: "",
+        photo: "",
+        updatedAt: ""
+    };
 
-const profileMessage = document.getElementById("profileMessage");
-const currentYear = document.getElementById("currentYear");
+    let currentProfile = { ...defaultProfile };
+    let currentPhotoURL = "";
+    let pendingPhotoFile = null;
+    let photoRemoved = false;
+    let messageTimeout = null;
+    let previewObjectURL = null;
+    let sidebarOverlay = null;
 
+    // ======================================
+    // API HELPER
+    // ======================================
 
-/* ---------- DEFAULT PROFILE ---------- */
-
-const defaultProfile = {
-    name: "Admin User",
-    username: "admin",
-    email: "admin@example.com",
-    phone: "",
-    website: "",
-    bio: "",
-    photo: "",
-    updatedAt: ""
-};
-
-let currentPhotoData = "";
-
-
-/* ---------- SAFE STORAGE HELPERS ---------- */
-
-function readProfile() {
-    try {
-        const saved = localStorage.getItem(PROFILE_STORAGE_KEY);
-
-        if (!saved) {
-            return { ...defaultProfile };
-        }
-
-        const parsed = JSON.parse(saved);
-
-        if (!parsed || typeof parsed !== "object") {
-            return { ...defaultProfile };
-        }
-
-        return {
-            ...defaultProfile,
-            ...parsed
+    async function apiRequest(url, options = {}) {
+        const headers = {
+            ...(options.headers || {})
         };
 
-    } catch (error) {
-        console.error("Could not read profile:", error);
-        return { ...defaultProfile };
+        // FormData ke liye Content-Type manually set nahi karna.
+        if (!(options.body instanceof FormData)) {
+            headers["Content-Type"] = "application/json";
+        }
+
+        let response;
+
+        try {
+            response = await fetch(url, {
+                ...options,
+                headers,
+                credentials: "include"
+            });
+        } catch (error) {
+            throw new Error(
+                "Backend se connection nahi ho raha. Server check karo."
+            );
+        }
+
+        let result = null;
+
+        if (response.status !== 204) {
+            const contentType =
+                response.headers.get("content-type") || "";
+
+            if (contentType.includes("application/json")) {
+                try {
+                    result = await response.json();
+                } catch (_) {
+                    result = null;
+                }
+            } else {
+                const text = await response.text();
+                result = text ? { message: text } : null;
+            }
+        }
+
+        if (!response.ok) {
+            throw new Error(
+                result?.message ||
+                result?.error ||
+                `Request fail hua (${response.status}).`
+            );
+        }
+
+        return result;
     }
-}
 
+    // ======================================
+    // MESSAGE
+    // ======================================
 
-function writeProfile(profile) {
-    try {
-        localStorage.setItem(
-            PROFILE_STORAGE_KEY,
-            JSON.stringify(profile)
-        );
+    function showMessage(message, type = "success") {
+        if (!profileMessage) {
+            console.log(message);
+            return;
+        }
 
-        return true;
+        clearTimeout(messageTimeout);
 
-    } catch (error) {
-        console.error("Could not save profile:", error);
-        showMessage(
-            "Profile save nahi hua. Browser storage full ho sakta hai.",
-            "error"
-        );
+        profileMessage.textContent = message;
+        profileMessage.className = `profile-message ${type}`;
+        profileMessage.hidden = false;
 
-        return false;
+        messageTimeout = setTimeout(() => {
+            profileMessage.hidden = true;
+        }, 4000);
     }
-}
 
+    // ======================================
+    // FORM LOADING
+    // ======================================
 
-/* ---------- NOTIFICATION ---------- */
+    function setFormLoading(form, loading) {
+        if (!form) return;
 
-let messageTimeout;
+        const button = form.querySelector('[type="submit"]');
 
-function showMessage(message, type = "success") {
-    if (!profileMessage) return;
+        if (!button) return;
 
-    clearTimeout(messageTimeout);
+        if (loading) {
+            button.dataset.originalText = button.textContent;
+            button.disabled = true;
+            button.textContent = "Please wait...";
+        } else {
+            button.disabled = false;
 
-    profileMessage.textContent = message;
-    profileMessage.className = "profile-message " + type;
-    profileMessage.hidden = false;
+            if (button.dataset.originalText) {
+                button.textContent = button.dataset.originalText;
+                delete button.dataset.originalText;
+            }
+        }
+    }
 
-    messageTimeout = setTimeout(() => {
-        profileMessage.hidden = true;
-    }, 3500);
-}
+    // ======================================
+    // AVATAR HELPERS
+    // ======================================
 
+    function getInitial(name) {
+        const cleanName = String(name || "").trim();
 
-/* ---------- AVATAR HELPERS ---------- */
+        return cleanName
+            ? cleanName.charAt(0).toUpperCase()
+            : "A";
+    }
 
-function getInitial(name) {
-    const cleanName = String(name || "").trim();
+    function renderAvatar(element, name, photo = "") {
+        if (!element) return;
 
-    return cleanName ? cleanName.charAt(0).toUpperCase() : "D";
-}
+        element.replaceChildren();
 
+        if (!photo) {
+            element.textContent = getInitial(name);
+            return;
+        }
 
-function renderAvatar(element, name, photo = "") {
-    if (!element) return;
-
-    element.replaceChildren();
-
-    if (photo) {
         const image = document.createElement("img");
 
         image.src = photo;
         image.alt = "Profile photo";
 
         image.addEventListener("error", () => {
+            element.replaceChildren();
             element.textContent = getInitial(name);
         }, { once: true });
 
         element.appendChild(image);
-
-    } else {
-        element.textContent = getInitial(name);
-    }
-}
-
-
-/* ---------- RENDER PROFILE ---------- */
-
-function renderProfile(profile = readProfile()) {
-    if (profileName) {
-        profileName.value = profile.name;
     }
 
-    if (profileUsername) {
-        profileUsername.value = profile.username;
+    function renderAllAvatars(name, photo = "") {
+        renderAvatar(profileAvatar, name, photo);
+        renderAvatar(uploadAvatarPreview, name, photo);
+        renderAvatar(sidebarAvatar, name, photo);
     }
 
-    if (profileEmail) {
-        profileEmail.value = profile.email;
-    }
+    // ======================================
+    // BIO CHARACTER COUNT
+    // ======================================
 
-    if (profilePhone) {
-        profilePhone.value = profile.phone;
-    }
+    function updateBioCount() {
+        if (!profileBio || !bioCharacterCount) return;
 
-    if (profileWebsite) {
-        profileWebsite.value = profile.website;
+        bioCharacterCount.textContent = String(
+            profileBio.value.length
+        );
     }
 
     if (profileBio) {
-        profileBio.value = profile.bio;
+        profileBio.addEventListener("input", updateBioCount);
     }
 
-    currentPhotoData = profile.photo || "";
+    // ======================================
+    // RENDER PROFILE
+    // ======================================
 
-    renderAvatar(
-        profileAvatar,
-        profile.name,
-        currentPhotoData
-    );
-
-    renderAvatar(
-        uploadAvatarPreview,
-        profile.name,
-        currentPhotoData
-    );
-
-    renderAvatar(
-        sidebarAvatar,
-        profile.name,
-        currentPhotoData
-    );
-
-    if (profileDisplayName) {
-        profileDisplayName.textContent =
-            profile.name || "Admin User";
-    }
-
-    if (profileDisplayEmail) {
-        profileDisplayEmail.textContent =
-            profile.email || "admin@example.com";
-    }
-
-    if (sidebarName) {
-        sidebarName.textContent =
-            profile.name || "Admin";
-    }
-
-    if (profileLastUpdated) {
-        profileLastUpdated.textContent =
-            profile.updatedAt || "Not available";
-    }
-
-    updateBioCount();
-}
-
-
-/* ---------- COLLECT FORM DATA ---------- */
-
-function collectProfileData() {
-    const oldProfile = readProfile();
-
-    return {
-        name: profileName.value.trim(),
-        username: profileUsername.value.trim(),
-        email: profileEmail.value.trim(),
-        phone: profilePhone.value.trim(),
-        website: profileWebsite.value.trim(),
-        bio: profileBio.value.trim(),
-        photo: currentPhotoData,
-        updatedAt: new Date().toLocaleString(),
-        createdAt: oldProfile.createdAt || ""
-    };
-}
-
-
-/* ---------- SAVE PROFILE ---------- */
-
-if (profileForm) {
-    profileForm.addEventListener("submit", function (event) {
-        event.preventDefault();
-
-        if (!profileForm.reportValidity()) {
-            return;
+    function renderProfile(profile = currentProfile) {
+        if (profileName) {
+            profileName.value = profile.name || "";
         }
 
-        const profile = collectProfileData();
+        if (profileUsername) {
+            profileUsername.value = profile.username || "";
+        }
 
+        if (profileEmail) {
+            profileEmail.value = profile.email || "";
+        }
+
+        if (profilePhone) {
+            profilePhone.value = profile.phone || "";
+        }
+
+        if (profileWebsite) {
+            profileWebsite.value = profile.website || "";
+        }
+
+        if (profileBio) {
+            profileBio.value = profile.bio || "";
+        }
+
+        currentPhotoURL = profile.photo || "";
+
+        renderAllAvatars(
+            profile.name || "Admin",
+            currentPhotoURL
+        );
+
+        if (profileDisplayName) {
+            profileDisplayName.textContent =
+                profile.name || "Admin User";
+        }
+
+        if (profileDisplayEmail) {
+            profileDisplayEmail.textContent =
+                profile.email || "";
+        }
+
+        if (sidebarName) {
+            sidebarName.textContent = profile.name || "Admin";
+        }
+
+        if (profileLastUpdated) {
+            profileLastUpdated.textContent =
+                profile.updatedAt || "Not available";
+        }
+
+        updateBioCount();
+    }
+
+    // ======================================
+    // LOAD PROFILE FROM BACKEND
+    // ======================================
+
+    async function loadProfile() {
+        if (profileForm) {
+            profileForm.querySelectorAll("input, textarea, button")
+                .forEach((element) => {
+                    if (element.type !== "reset") {
+                        element.disabled = true;
+                    }
+                });
+        }
+
+        try {
+            const result = await apiRequest(PROFILE_API);
+
+            const profileData = result?.profile || result;
+
+            if (!profileData || typeof profileData !== "object") {
+                throw new Error("Backend se profile data nahi mila.");
+            }
+
+            currentProfile = {
+                ...defaultProfile,
+                ...profileData
+            };
+
+            currentPhotoURL = currentProfile.photo || "";
+
+            renderProfile(currentProfile);
+        } catch (error) {
+            console.error("Load profile error:", error);
+
+            showMessage(
+                `Profile load nahi hui: ${error.message}`,
+                "error"
+            );
+        } finally {
+            if (profileForm) {
+                profileForm.querySelectorAll(
+                    "input, textarea, button"
+                ).forEach((element) => {
+                    if (element.type !== "reset") {
+                        element.disabled = false;
+                    }
+                });
+            }
+        }
+    }
+
+    // ======================================
+    // COLLECT PROFILE DATA
+    // ======================================
+
+    function collectProfileData() {
+        return {
+            name: profileName?.value.trim() || "",
+            username: profileUsername?.value.trim() || "",
+            email: profileEmail?.value.trim() || "",
+            phone: profilePhone?.value.trim() || "",
+            website: profileWebsite?.value.trim() || "",
+            bio: profileBio?.value.trim() || ""
+        };
+    }
+
+    // ======================================
+    // VALIDATE PROFILE
+    // ======================================
+
+    function validateProfile(profile) {
         if (!profile.name || !profile.username || !profile.email) {
             showMessage(
                 "Name, username aur email bharna zaroori hai.",
                 "error"
             );
-            return;
+            return false;
+        }
+
+        if (
+            profileEmail &&
+            !profileEmail.validity.valid
+        ) {
+            showMessage("Valid email address enter karo.", "error");
+            profileEmail.focus();
+            return false;
         }
 
         if (profile.website) {
             try {
-                const websiteURL = new URL(profile.website);
+                const url = new URL(profile.website);
 
                 if (
-                    websiteURL.protocol !== "https:" &&
-                    websiteURL.protocol !== "http:"
+                    url.protocol !== "https:" &&
+                    url.protocol !== "http:"
                 ) {
                     throw new Error("Invalid protocol");
                 }
-
-            } catch (error) {
+            } catch (_) {
                 showMessage(
                     "Valid website URL enter karo.",
                     "error"
                 );
 
-                profileWebsite.focus();
-                return;
+                profileWebsite?.focus();
+                return false;
             }
         }
 
-        if (writeProfile(profile)) {
-            renderProfile(profile);
+        return true;
+    }
 
-            showMessage(
-                "Profile successfully save ho gayi!",
-                "success"
-            );
-        }
-    });
-}
+    // ======================================
+    // UPLOAD PROFILE PHOTO
+    // ======================================
 
+    async function uploadPhoto(file) {
+        const formData = new FormData();
 
-/* ---------- RESET PROFILE FORM ---------- */
+        formData.append("photo", file);
 
-if (profileForm) {
-    profileForm.addEventListener("reset", function () {
-        setTimeout(() => {
-            renderProfile(readProfile());
-        }, 0);
-    });
-}
-
-
-/* ---------- BIO CHARACTER COUNT ---------- */
-
-function updateBioCount() {
-    if (!profileBio || !bioCharacterCount) return;
-
-    bioCharacterCount.textContent =
-        String(profileBio.value.length);
-}
-
-
-if (profileBio) {
-    profileBio.addEventListener("input", updateBioCount);
-}
-
-
-/* ---------- PHOTO PREVIEW ---------- */
-
-if (profilePhoto) {
-    profilePhoto.addEventListener("change", function () {
-        const file = profilePhoto.files?.[0];
-
-        if (!file) return;
-
-        const allowedTypes = [
-            "image/jpeg",
-            "image/png",
-            "image/webp"
-        ];
-
-        if (!allowedTypes.includes(file.type)) {
-            showMessage(
-                "Sirf JPG, PNG ya WEBP image select karo.",
-                "error"
-            );
-
-            profilePhoto.value = "";
-            return;
-        }
-
-        if (file.size > 2 * 1024 * 1024) {
-            showMessage(
-                "Photo ka size 2 MB se kam hona chahiye.",
-                "error"
-            );
-
-            profilePhoto.value = "";
-            return;
-        }
-
-        const reader = new FileReader();
-
-        reader.onload = function () {
-            if (typeof reader.result !== "string") {
-                showMessage("Photo read nahi ho paayi.", "error");
-                return;
+        const result = await apiRequest(
+            `${PROFILE_API}/photo`,
+            {
+                method: "POST",
+                body: formData
             }
-
-            currentPhotoData = reader.result;
-
-            const name = profileName?.value.trim() || "Admin";
-
-            renderAvatar(profileAvatar, name, currentPhotoData);
-            renderAvatar(uploadAvatarPreview, name, currentPhotoData);
-            renderAvatar(sidebarAvatar, name, currentPhotoData);
-
-            showMessage(
-                "Photo preview ready hai. Save Changes dabana mat bhoolna.",
-                "success"
-            );
-        };
-
-        reader.onerror = function () {
-            showMessage("Photo read nahi ho paayi.", "error");
-        };
-
-        reader.readAsDataURL(file);
-    });
-}
-
-
-/* ---------- REMOVE PROFILE PHOTO ---------- */
-
-if (removePhotoBtn) {
-    removePhotoBtn.addEventListener("click", function () {
-        currentPhotoData = "";
-
-        if (profilePhoto) {
-            profilePhoto.value = "";
-        }
-
-        const name = profileName?.value.trim() || "Admin";
-
-        renderAvatar(profileAvatar, name);
-        renderAvatar(uploadAvatarPreview, name);
-        renderAvatar(sidebarAvatar, name);
-
-        showMessage(
-            "Photo remove preview ho gayi. Save Changes dabakar confirm karo.",
-            "success"
         );
-    });
-}
 
+        const photoURL =
+            result?.photo ||
+            result?.photoUrl ||
+            result?.url;
 
-/* ---------- UPDATE AVATAR INITIAL LIVE ---------- */
+        if (!photoURL) {
+            throw new Error(
+                "Photo upload response mein photo URL nahi mila."
+            );
+        }
 
-if (profileName) {
-    profileName.addEventListener("input", function () {
-        if (currentPhotoData) return;
+        return photoURL;
+    }
 
-        const name = profileName.value.trim() || "Admin";
+    // ======================================
+    // REMOVE PHOTO ON SERVER
+    // ======================================
 
-        renderAvatar(profileAvatar, name);
-        renderAvatar(uploadAvatarPreview, name);
-        renderAvatar(sidebarAvatar, name);
-    });
-}
+    async function removePhotoOnServer() {
+        await apiRequest(`${PROFILE_API}/photo`, {
+            method: "DELETE"
+        });
+    }
 
+    // ======================================
+    // SAVE PROFILE TO BACKEND
+    // ======================================
 
-/* ---------- PASSWORD VISIBILITY ---------- */
+    if (profileForm) {
+        profileForm.addEventListener("submit", async (event) => {
+            event.preventDefault();
 
-document.querySelectorAll("[data-password-target]").forEach(
-    function (button) {
-        button.addEventListener("click", function () {
-            const targetId = button.dataset.passwordTarget;
-            const input = document.getElementById(targetId);
+            if (!profileForm.reportValidity()) return;
 
-            if (!input) return;
+            const profile = collectProfileData();
 
-            const showing = input.type === "text";
+            if (!validateProfile(profile)) return;
 
-            input.type = showing ? "password" : "text";
-            button.textContent = showing ? "Show" : "Hide";
+            setFormLoading(profileForm, true);
 
-            button.setAttribute(
-                "aria-label",
-                showing ? "Show password" : "Hide password"
+            try {
+                let photoURL = currentPhotoURL;
+
+                // Remove existing photo on server if requested.
+                if (photoRemoved) {
+                    await removePhotoOnServer();
+                    photoURL = "";
+                }
+
+                // Upload newly selected photo.
+                if (pendingPhotoFile) {
+                    photoURL = await uploadPhoto(pendingPhotoFile);
+                }
+
+                const result = await apiRequest(PROFILE_API, {
+                    method: "PUT",
+                    body: JSON.stringify({
+                        ...profile,
+                        photo: photoURL
+                    })
+                });
+
+                const savedProfile = result?.profile || result;
+
+                currentProfile = {
+                    ...profile,
+                    photo: savedProfile?.photo ?? photoURL,
+                    updatedAt:
+                        savedProfile?.updatedAt ||
+                        savedProfile?.updated_at ||
+                        new Date().toLocaleString()
+                };
+
+                currentPhotoURL = currentProfile.photo || "";
+                pendingPhotoFile = null;
+                photoRemoved = false;
+
+                if (profilePhoto) {
+                    profilePhoto.value = "";
+                }
+
+                renderProfile(currentProfile);
+
+                showMessage(
+                    "Profile successfully backend par save ho gayi!",
+                    "success"
+                );
+            } catch (error) {
+                console.error("Save profile error:", error);
+
+                showMessage(
+                    `Profile save nahi hui: ${error.message}`,
+                    "error"
+                );
+            } finally {
+                setFormLoading(profileForm, false);
+            }
+        });
+    }
+
+    // ======================================
+    // RESET PROFILE FORM
+    // ======================================
+
+    if (profileForm) {
+        profileForm.addEventListener("reset", () => {
+            setTimeout(() => {
+                pendingPhotoFile = null;
+                photoRemoved = false;
+
+                if (profilePhoto) {
+                    profilePhoto.value = "";
+                }
+
+                renderProfile(currentProfile);
+            }, 0);
+        });
+    }
+
+    // ======================================
+    // PHOTO PREVIEW
+    // ======================================
+
+    if (profilePhoto) {
+        profilePhoto.addEventListener("change", () => {
+            const file = profilePhoto.files?.[0];
+
+            if (!file) return;
+
+            const allowedTypes = [
+                "image/jpeg",
+                "image/png",
+                "image/webp"
+            ];
+
+            if (!allowedTypes.includes(file.type)) {
+                showMessage(
+                    "Sirf JPG, PNG ya WEBP image select karo.",
+                    "error"
+                );
+
+                profilePhoto.value = "";
+                return;
+            }
+
+            if (file.size > 2 * 1024 * 1024) {
+                showMessage(
+                    "Photo ka size 2 MB se kam hona chahiye.",
+                    "error"
+                );
+
+                profilePhoto.value = "";
+                return;
+            }
+
+            if (previewObjectURL) {
+                URL.revokeObjectURL(previewObjectURL);
+            }
+
+            previewObjectURL = URL.createObjectURL(file);
+
+            pendingPhotoFile = file;
+            photoRemoved = false;
+
+            renderAllAvatars(
+                profileName?.value.trim() || "Admin",
+                previewObjectURL
+            );
+
+            showMessage(
+                "Photo preview ready hai. Save Changes dabao.",
+                "success"
             );
         });
     }
-);
 
+    // ======================================
+    // REMOVE PHOTO
+    // ======================================
 
-/* ---------- PASSWORD FORM VALIDATION ---------- */
+    if (removePhotoBtn) {
+        removePhotoBtn.addEventListener("click", () => {
+            pendingPhotoFile = null;
+            photoRemoved = Boolean(currentPhotoURL);
 
-/*
-   IMPORTANT:
-   Frontend-only JavaScript cannot securely change an
-   authenticated account password.
+            if (profilePhoto) {
+                profilePhoto.value = "";
+            }
 
-   Do not save passwords in localStorage.
-   Real password changes require a backend/auth provider.
-*/
+            if (previewObjectURL) {
+                URL.revokeObjectURL(previewObjectURL);
+                previewObjectURL = null;
+            }
 
-if (passwordForm) {
-    passwordForm.addEventListener("submit", function (event) {
-        event.preventDefault();
-
-        if (!passwordForm.reportValidity()) {
-            return;
-        }
-
-        const currentPassword =
-            document.getElementById("currentPassword").value;
-
-        const newPassword =
-            document.getElementById("newPassword").value;
-
-        const confirmPassword =
-            document.getElementById("confirmPassword").value;
-
-        if (!currentPassword) {
-            showMessage(
-                "Current password enter karo.",
-                "error"
-            );
-            return;
-        }
-
-        if (newPassword.length < 8) {
-            showMessage(
-                "New password kam se kam 8 characters ka hona chahiye.",
-                "error"
-            );
-            return;
-        }
-
-        if (newPassword !== confirmPassword) {
-            showMessage(
-                "New password aur confirm password match nahi karte.",
-                "error"
+            renderAllAvatars(
+                profileName?.value.trim() || "Admin",
+                ""
             );
 
-            document.getElementById("confirmPassword").focus();
-            return;
-        }
-
-        if (currentPassword === newPassword) {
             showMessage(
-                "Naya password current password se alag rakho.",
-                "error"
+                "Photo removal select ho gaya. Confirm karne ke liye Save Changes dabao.",
+                "success"
             );
-            return;
-        }
+        });
+    }
 
-        showMessage(
-            "Password form validate ho gaya, lekin real password change ke liye backend/authentication connect karna hoga.",
-            "error"
-        );
-    });
-}
+    // ======================================
+    // LIVE AVATAR INITIAL
+    // ======================================
 
+    if (profileName) {
+        profileName.addEventListener("input", () => {
+            if (pendingPhotoFile || currentPhotoURL) return;
 
-/* ---------- PASSWORD FORM RESET ---------- */
+            renderAllAvatars(
+                profileName.value.trim() || "Admin",
+                ""
+            );
+        });
+    }
 
-if (passwordForm) {
-    passwordForm.addEventListener("reset", function () {
-        setTimeout(() => {
-            passwordForm.querySelectorAll(
-                ".password-toggle"
-            ).forEach(function (button) {
-                button.textContent = "Show";
-                button.setAttribute("aria-label", "Show password");
+    // ======================================
+    // PASSWORD VISIBILITY
+    // ======================================
+
+    document.querySelectorAll("[data-password-target]").forEach(
+        (button) => {
+            button.addEventListener("click", () => {
+                const input = document.getElementById(
+                    button.dataset.passwordTarget
+                );
+
+                if (!input) return;
+
+                const showing = input.type === "text";
+
+                input.type = showing ? "password" : "text";
+                button.textContent = showing ? "Show" : "Hide";
+
+                button.setAttribute(
+                    "aria-label",
+                    showing ? "Show password" : "Hide password"
+                );
             });
-        }, 0);
-    });
-}
+        }
+    );
 
+    
+    // ======================================
+    // CHANGE PASSWORD THROUGH BACKEND
+    // ======================================
 
-/* ---------- THEME ---------- */
+    if (passwordForm) {
+        passwordForm.addEventListener("submit", async (event) => {
+            event.preventDefault();
 
-function applyTheme(theme) {
-    const isLight = theme === "light";
+            if (!passwordForm.reportValidity()) return;
 
-    document.body.classList.toggle("light-theme", isLight);
+            const currentPassword =
+                document.getElementById("currentPassword")?.value || "";
 
-    if (themeToggle) {
-        themeToggle.textContent = isLight ? "☾" : "☼";
+            const newPassword =
+                document.getElementById("newPassword")?.value || "";
 
-        themeToggle.setAttribute(
-            "aria-label",
-            isLight ? "Switch to dark theme" : "Switch to light theme"
-        );
+            const confirmPassword =
+                document.getElementById("confirmPassword")?.value || "";
+
+            if (!currentPassword) {
+                showMessage("Current password enter karo.", "error");
+                return;
+            }
+
+            if (newPassword.length < 8) {
+                showMessage(
+                    "Naya password kam se kam 8 characters ka hona chahiye.",
+                    "error"
+                );
+                return;
+            }
+
+            if (newPassword !== confirmPassword) {
+                showMessage(
+                    "New password aur confirm password match nahi karte.",
+                    "error"
+                );
+                return;
+            }
+
+            if (currentPassword === newPassword) {
+                showMessage(
+                    "Naya password current password se alag rakho.",
+                    "error"
+                );
+                return;
+            }
+
+            setFormLoading(passwordForm, true);
+
+            try {
+                const result = await apiRequest(
+                    `${AUTH_API}/change-password`,
+                    {
+                        method: "PATCH",
+                        body: JSON.stringify({
+                            currentPassword,
+                            newPassword
+                        })
+                    }
+                );
+
+                passwordForm.reset();
+
+                passwordForm.querySelectorAll(
+                    "[data-password-target]"
+                ).forEach((button) => {
+                    button.textContent = "Show";
+                    button.setAttribute("aria-label", "Show password");
+                });
+
+                showMessage(
+                    result?.message ||
+                    "Password successfully change ho gaya.",
+                    "success"
+                );
+            } catch (error) {
+                console.error("Change password error:", error);
+
+                showMessage(
+                    `Password change nahi hua: ${error.message}`,
+                    "error"
+                );
+            } finally {
+                setFormLoading(passwordForm, false);
+            }
+        });
     }
-}
 
+    // ======================================
+    // THEME
+    // ======================================
 
-function loadTheme() {
-    let theme = "dark";
+    function applyTheme(theme) {
+        const isLight = theme === "light";
 
-    try {
-        theme = localStorage.getItem(THEME_STORAGE_KEY) || "dark";
-    } catch (error) {
-        console.warn("Theme preference unavailable.");
+        document.body.classList.toggle("light-theme", isLight);
+        document.documentElement.setAttribute("data-theme", theme);
+
+        if (themeToggle) {
+            themeToggle.textContent = isLight ? "☾" : "☼";
+
+            themeToggle.setAttribute(
+                "aria-label",
+                isLight ? "Switch to dark theme" : "Switch to light theme"
+            );
+        }
     }
 
-    applyTheme(theme);
-}
-
-
-if (themeToggle) {
-    themeToggle.addEventListener("click", function () {
-        const isLight =
-            document.body.classList.contains("light-theme");
-
-        const newTheme = isLight ? "dark" : "light";
-
-        applyTheme(newTheme);
+    function loadTheme() {
+        let theme = "dark";
 
         try {
-            localStorage.setItem(THEME_STORAGE_KEY, newTheme);
-        } catch (error) {
-            console.warn("Could not save theme preference.");
+            theme =
+                localStorage.getItem(THEME_STORAGE_KEY) || "dark";
+        } catch (_) {
+            // Theme preference is optional.
         }
-    });
-}
 
+        applyTheme(theme);
+    }
 
-/* ---------- MOBILE SIDEBAR ---------- */
+    if (themeToggle) {
+        themeToggle.addEventListener("click", () => {
+            const isLight =
+                document.body.classList.contains("light-theme");
 
-let sidebarOverlay = null;
+            const newTheme = isLight ? "dark" : "light";
 
+            applyTheme(newTheme);
 
-function createSidebarOverlay() {
-    if (!sidebar || sidebarOverlay) return;
+            try {
+                localStorage.setItem(
+                    THEME_STORAGE_KEY,
+                    newTheme
+                );
+            } catch (_) {
+                // Theme preference could not be persisted.
+            }
+        });
+    }
 
-    sidebarOverlay = document.createElement("div");
-    sidebarOverlay.className = "sidebar-overlay";
+    // ======================================
+    // MOBILE SIDEBAR
+    // ======================================
 
-    sidebarOverlay.addEventListener("click", closeSidebar);
+    function closeSidebar() {
+        if (sidebar) {
+            sidebar.classList.remove("open");
+        }
 
-    document.body.appendChild(sidebarOverlay);
-}
+        if (sidebarOverlay) {
+            sidebarOverlay.classList.remove("active");
+        }
+    }
 
+    function openSidebar() {
+        if (!sidebar) return;
 
-function openSidebar() {
-    if (!sidebar) return;
+        if (!sidebarOverlay) {
+            sidebarOverlay = document.createElement("div");
+            sidebarOverlay.className = "sidebar-overlay";
 
-    createSidebarOverlay();
+            sidebarOverlay.addEventListener("click", closeSidebar);
 
-    sidebar.classList.add("open");
+            document.body.appendChild(sidebarOverlay);
+        }
 
-    if (sidebarOverlay) {
+        sidebar.classList.add("open");
         sidebarOverlay.classList.add("active");
     }
-}
 
-
-function closeSidebar() {
-    if (!sidebar) return;
-
-    sidebar.classList.remove("open");
-
-    if (sidebarOverlay) {
-        sidebarOverlay.classList.remove("active");
+    if (menuBtn) {
+        menuBtn.addEventListener("click", () => {
+            if (sidebar?.classList.contains("open")) {
+                closeSidebar();
+            } else {
+                openSidebar();
+            }
+        });
     }
-}
 
-
-if (menuBtn) {
-    menuBtn.addEventListener("click", function () {
-        if (sidebar?.classList.contains("open")) {
+    window.addEventListener("resize", () => {
+        if (window.innerWidth > 850) {
             closeSidebar();
-        } else {
-            openSidebar();
         }
     });
-}
 
+    // ======================================
+    // LOGOUT
+    // ======================================
 
-window.addEventListener("resize", function () {
-    if (window.innerWidth > 850) {
-        closeSidebar();
+    if (logoutBtn) {
+        logoutBtn.addEventListener("click", async (event) => {
+            event.preventDefault();
+
+            const confirmed = window.confirm(
+                "Kya tum logout karna chahte ho?"
+            );
+
+            if (!confirmed) return;
+
+            try {
+                await apiRequest(`${AUTH_API}/logout`, {});
+            } catch (error) {
+                console.error("Logout request error:", error);
+            }
+
+            window.location.href = "../login.html";
+        });
     }
+
+    // ======================================
+    // FOOTER YEAR
+    // ======================================
+
+    if (currentYear) {
+        currentYear.textContent = new Date().getFullYear();
+    }
+
+    // ======================================
+    // INITIALIZE
+    // ======================================
+
+    loadTheme();
+    loadProfile();
+
+    console.log("KEWADEV Profile JS loaded.");
 });
-
-
-/* ---------- LOGOUT ---------- */
-
-if (logoutBtn) {
-    logoutBtn.addEventListener("click", function () {
-        const confirmed = window.confirm(
-            "Kya tum login page par wapas jaana chahte ho?"
-        );
-
-        if (!confirmed) return;
-
-        window.location.href = "../login.html";
-    });
-}
-
-
-/* ---------- FOOTER YEAR ---------- */
-
-if (currentYear) {
-    currentYear.textContent = new Date().getFullYear();
-}
-
-
-/* ---------- INITIALIZE ---------- */
-
-renderProfile();
-loadTheme();
-
-console.log("KEWADEV Profile JS loaded successfully.");
